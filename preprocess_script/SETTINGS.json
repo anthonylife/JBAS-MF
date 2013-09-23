@@ -1,0 +1,13 @@
+{
+    "raw_data_path1":"/home/anthonylife/Doctor/Data/Reviews/Beeradvocate/beeradvocate.txt",
+    "raw_data_path2":"/home/anthonylife/Doctor/Data/Reviews/Amazon-Movies/movies.txt",
+    "clean_data_dir1":"../data/Beeradvocate/clean/",
+    "clean_data_dir2":"../data/Amazon-Movies/clean/",
+    "user_item_review_file":"userid_itemid_reviewid.csv",
+    "reviewid_score_file":"reviewid_score.csv",
+    "reviewid_time_file":"reviewid_time.csv",
+    "reviewid_text_file":"reviewid_text.dat",
+    "reviewid_aspect_score_file":"reviewid_aspect_score.csv",
+    "filter_data_dir1":"../data/Beeradvocate/filter/",
+    "filter_data_dir2":"../data/Amazon-Movies/filter/"
+}
