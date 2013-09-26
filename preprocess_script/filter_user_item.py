@@ -20,6 +20,7 @@ def filter_entity(entity, low_num):
             removed_entity_ids.add(entity_id)
     for entity_id in removed_entity_ids:
         del entity[entity_id]
+    print len(removed_entity_ids)
     return removed_entity_ids, entity
 
 def update_ids(entity, removed_ids):
@@ -39,6 +40,9 @@ def run_filter(inputfile, user_outputfile, item_outputfile, user_lnum, item_lnum
             user_item[user_id].add(item_id)
             item_user[item_id].add(user_id)
 
+    print 'Original user number: %d, original item number: %d\n' % \
+            (len(user_item), len(item_user))
+
     # filtering user and items iteratively
     while True:
         removed_user_ids, user_item = filter_entity(user_item, user_lnum)
@@ -51,30 +55,34 @@ def run_filter(inputfile, user_outputfile, item_outputfile, user_lnum, item_lnum
         if len(removed_item_ids) > 0:
             user_item = update_ids(user_item, removed_item_ids)
 
+        print 'Updated user number: %d, updated item number: %d\n' % \
+                (len(user_item), len(item_user))
+        raw_input()
+
 def main():
     parser = argparse.ArgumentParser()
 
     # Add argument to the "parser"
-    parser.add_argument('-c1', action='store', dest='cellar_user_num_td',
+    parser.add_argument('-c1', type=int, action='store', dest='cellar_user_num_td',
             help='Lower bound number of reviews for each user in CellarTracker')
-    parser.add_argument('-c2', action='store', dest='cellar_item_num_td',
+    parser.add_argument('-c2', type=int, action='store', dest='cellar_item_num_td',
             help='Lower bound number of reviews for each item in CellarTracker')
-    parser.add_argument('-m1', action='store', dest='movie_user_num_td',
+    parser.add_argument('-m1', type=int, action='store', dest='movie_user_num_td',
             help='Lower bound number of reviews for each user in Amazon Movie')
-    parser.add_argument('-m2', action='store', dest='movie_item_num_td',
+    parser.add_argument('-m2', type=int, action='store', dest='movie_item_num_td',
             help='Lower bound number of reviews for each item in Amazon Movie')
-    parser.add_argument('-f1', action='store', dest='food_user_num_td',
+    parser.add_argument('-f1', type=int, action='store', dest='food_user_num_td',
             help='Lower bound number of reviews for each user in Amazon Food')
-    parser.add_argument('-f2', action='store', dest='food_item_num_td',
+    parser.add_argument('-f2', type=int, action='store', dest='food_item_num_td',
             help='Lower bound number of reviews for each item in Amazon Food')
 
-    if len(sys.args) != 13:
+    if len(sys.argv) != 13:
         print 'python filter_user_item.py -c1 20 -c2 30 -m1 20 -m2 30 -f1 20 -f2 30'
         sys.exit(1)
 
     para = parser.parse_args()
     print 'input arguments:'
-    print 'cellar_user_num_td  =', para.cellar_user_num_td
+    print 'cellar_user_num_td  = ', para.cellar_user_num_td
     print 'cellar_item_num_td  =', para.cellar_item_num_td
     print 'movie_user_num_td  =', para.movie_user_num_td
     print 'movie_item_num_td  =', para.movie_item_num_td
