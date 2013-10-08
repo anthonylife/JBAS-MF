@@ -5,12 +5,12 @@
 @author: Wei Zhang
 @date: 2013/9/24
 @description: file "filter_user_item.py" filter users and items accroding to
-              the number of reviews of they have. (This number is specified
-              manually)
+    the number of reviews of they have. (This number is specified manually)
 '''
 
 import sys, csv, json, argparse
 from collections import defaultdict
+from util import output_one_item
 
 def filter_entity(entity, low_num):
     # filter entities accroding to the specified lower number
@@ -20,7 +20,7 @@ def filter_entity(entity, low_num):
             removed_entity_ids.add(entity_id)
     for entity_id in removed_entity_ids:
         del entity[entity_id]
-    print len(removed_entity_ids)
+    #print len(removed_entity_ids)
     return removed_entity_ids, entity
 
 def update_ids(entity, removed_ids):
@@ -57,7 +57,15 @@ def run_filter(inputfile, user_outputfile, item_outputfile, user_lnum, item_lnum
 
         print 'Updated user number: %d, updated item number: %d\n' % \
                 (len(user_item), len(item_user))
-        raw_input()
+        #raw_input()
+
+    # ouput filtered users and items
+    wfd = open(user_outputfile, "w")
+    output_one_item(user_item.keys(), wfd)
+    wfd.close()
+    wfd = open(item_outputfile, "w")
+    output_one_item(item_user.keys(), wfd)
+    wfd.close()
 
 def main():
     parser = argparse.ArgumentParser()
@@ -77,7 +85,7 @@ def main():
             help='Lower bound number of reviews for each item in Amazon Food')
 
     if len(sys.argv) != 13:
-        print 'python filter_user_item.py -c1 20 -c2 30 -m1 20 -m2 30 -f1 20 -f2 30'
+        print 'python filter_user_item.py -c1 5 -c2 10 -m1 5 -m2 10 -f1 5 -f2 10'
         sys.exit(1)
 
     para = parser.parse_args()
@@ -94,8 +102,8 @@ def main():
 
     print 'Start filtering data in CellarTracker...'
     user_item_review_file=paths["clean_data_dir1"]+paths["user_item_review_file"]
-    filter_user_file = paths["clean_data_dir1"] + paths["raw_filter_user_file"]
-    filter_item_file = paths["clean_data_dir1"] + paths["raw_filter_item_file"]
+    filter_user_file = paths["filter_data_dir1"] + paths["raw_filter_user_file"]
+    filter_item_file = paths["filter_data_dir1"] + paths["raw_filter_item_file"]
     run_filter(user_item_review_file, filter_user_file, filter_item_file,
             para.cellar_user_num_td, para.cellar_item_num_td)
     print 'Finish filtering!'
@@ -103,17 +111,17 @@ def main():
 
     print 'Start filtering data in Amazon Movies...'
     user_item_review_file=paths["clean_data_dir2"]+paths["user_item_review_file"]
-    filter_user_file = paths["clean_data_dir2"] + paths["raw_filter_user_file"]
-    filter_item_file = paths["clean_data_dir2"] + paths["raw_filter_item_file"]
+    filter_user_file = paths["filter_data_dir2"] + paths["raw_filter_user_file"]
+    filter_item_file = paths["filter_data_dir2"] + paths["raw_filter_item_file"]
     run_filter(user_item_review_file, filter_user_file, filter_item_file,
             para.movie_user_num_td, para.movie_item_num_td)
     print 'Finish filtering!'
     raw_input()
 
-    print 'Start filtering data in Amazon Movies...'
+    print 'Start filtering data in Amazon Food...'
     user_item_review_file=paths["clean_data_dir3"]+paths["user_item_review_file"]
-    filter_user_file = paths["clean_data_dir3"] + paths["raw_filter_user_file"]
-    filter_item_file = paths["clean_data_dir3"] + paths["raw_filter_item_file"]
+    filter_user_file = paths["filter_data_dir3"] + paths["raw_filter_user_file"]
+    filter_item_file = paths["filter_data_dir3"] + paths["raw_filter_item_file"]
     run_filter(user_item_review_file, filter_user_file, filter_item_file,
             para.food_user_num_td, para.food_item_num_td)
     print 'Finish filtering!'
