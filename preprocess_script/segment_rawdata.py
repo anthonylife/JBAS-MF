@@ -54,6 +54,9 @@ def main():
             review_text = lines[8].strip("\t\r\n").replace("<br />","").\
                     replace("review/text: ", "").replace("\t\n", "")
 
+            if len(review_text) < 2:
+                continue
+
             review_id_start+=1
             review_id = review_id_start
             userid_itemid_reviewid[user_id].append((item_id, review_id))
@@ -73,11 +76,11 @@ def main():
     reviewid_score_wd.close()
     reviewid_time_wd.close()
     reviewid_text_wd.close()
-    raw_input()
+    #raw_input()
     #==================1--End===========================================
 
     #==================2--Start=========================================
-    '''print 'processing the second raw file: amazon-movies...'
+    print 'processing the second raw file: amazon-movies...'
     blocklinenum = 9   #number of lines in each block of data
     raw_file2 = open(paths['raw_data_path2'])
 
@@ -98,6 +101,8 @@ def main():
             line = raw_file2.readline()
             while i == 3 and "review/helpfulness" not in line:
                 line = raw_file2.readline()
+                if line == "":
+                    break
             if line != "":
                 lines.append(line)
         if review_id_start > 7911682 or len(lines) != blocklinenum:
@@ -112,6 +117,9 @@ def main():
                     time.localtime(review_timestamp))
             review_text = lines[7].strip("\t\r\n").replace("<br />","").\
                     replace("review/text: ", "").replace("\t\n", "")
+
+            if len(review_text) < 4:
+                continue
 
             review_id_start+=1
             review_id = review_id_start
@@ -132,7 +140,8 @@ def main():
     reviewid_score_wd.close()
     reviewid_time_wd.close()
     reviewid_text_wd.close()
-    '''#==================2--End===========================================
+    #raw_input()
+    #==================2--End===========================================
 
     #==================3--Start=========================================
     print 'processing the second raw file: amazon-food...'
@@ -170,6 +179,9 @@ def main():
                     time.localtime(review_timestamp))
             review_text = lines[7].strip("\t\r\n").replace("<br />","").\
                     replace("review/text: ", "").replace("\t\n", "")
+
+            if len(review_text) < 2:
+                continue
 
             review_id_start+=1
             review_id = review_id_start

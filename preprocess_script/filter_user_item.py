@@ -107,7 +107,7 @@ def main():
     run_filter(user_item_review_file, filter_user_file, filter_item_file,
             para.cellar_user_num_td, para.cellar_item_num_td)
     print 'Finish filtering!'
-    raw_input()
+    #raw_input()
 
     print 'Start filtering data in Amazon Movies...'
     user_item_review_file=paths["clean_data_dir2"]+paths["user_item_review_file"]
@@ -116,7 +116,7 @@ def main():
     run_filter(user_item_review_file, filter_user_file, filter_item_file,
             para.movie_user_num_td, para.movie_item_num_td)
     print 'Finish filtering!'
-    raw_input()
+    #raw_input()
 
     print 'Start filtering data in Amazon Food...'
     user_item_review_file=paths["clean_data_dir3"]+paths["user_item_review_file"]
