@@ -8,12 +8,13 @@
             corresponding sentiment words to form phrases.
 '''
 
-import csv, json, time
+import json, csv
 
 from global_setting import NOUN_POS, CHUNK_POS_ST, CHUNK_POS_MD
-from globla_setting import PHRASE_SEP, TERM_NUM_TD
+from globla_setting import PHRASE_SEP, TERM_NUM_TD, NEGATION_PREFIX
+from global_setting import ADJECTIVES, ADJ_SCOPE
 from util import nlp_process, parse_tagged_text, update_dict, filter_dict_by_num
-
+from util import sentence_detection, get_pos_of_term, get_nearest_term, is_negative
 
 #======================Start: strategy 1==========================
 def freq_phrase_extractor(in_paths, out_paths):
@@ -30,19 +31,27 @@ def freq_phrase_extractor(in_paths, out_paths):
         # extract head terms
         for line in open(in_path):
             line = line.strip("\n\t\r")
-            words_tags = parse_tagged_text(line)
+            [review_id, tagged_text] = line.split("::")
+            words_tags = parse_tagged_text(tagged_text)
             word_freq = freq_filter_term(word_freq, words_tags)
         head_terms = filter_dict_by_num(word_freq, TERM_NUM_TD[i])
 
         # extract modifier to form phrase
+        writer = csv.writer(open(out_paths[i], "w"), lineterminator="\n")
         for line in open(in_path):
             line = line.strip("\n\t\r")
-            words_tags = parse_tagged_text(line)
-            sens_words_tags = sentence_segment(words_tags)
+            [review_id, tagged_text] = line.split("::")
+            words_tags = parse_tagged_text(tagged_text)
+            sens_words_tags = sentence_detection(words_tags)
+            outputrow = [review_id]
             for sen_words_tags in sens_words_tags:
-                phrases = freq_find_modifier(words_tags)
+                phrases = freq_find_modifier(sen_words_tags, head_terms)
+                outputrow = outputrow + phrases
+            if len(outputrow) == 1:
+                continue
+            writer.writerow(outputrow)
 
-        print "fou ding"
+
 def freq_filter_term(word_freq, words_tags):
     '''
     Filter candidate term according to its frequency and pos tagging
@@ -52,7 +61,8 @@ def freq_filter_term(word_freq, words_tags):
         # check correctness of number of elements
         if len(word_tag) != 3:
             continue
-        word = word_tag[0].lower()
+        #word = word_tag[0].lower()
+        word = word_tag[0]
         pos_tag = word_tag[1]
         chunk_tag = word_tag[2]
 
@@ -76,10 +86,33 @@ def freq_filter_term(word_freq, words_tags):
         else:
             if len(cache_prefix) > 0:
                 word_freq = update_dict(word_freq, cache_prefix)
-
     return word_freq
 
+def freq_find_modifier(words_tags, head_terms):
+    '''
+    find modifier for each head term.
+    '''
+    headterms_pos = get_pos_of_term(words_tags, head_terms)
+    phrases = freq_nearest_modifier(headterms_pos, words_tags)
+    return phrases
 
+def freq_nearest_modifier(headterm_pos, words_tags):
+    phrases = []
+    for headterm in headterm_pos.keys():
+        st_idx = headterm_pos[headterm][0]
+        ed_idx = headterm_pos[headterm][1]
+        # search adjective for headterm
+        modifier, cur_idx = get_nearest_term(st_idx-ADJ_SCOPE[0],
+                st_idx, ADJECTIVES, words_tags, "negative")
+        if modifier == None:
+            modifier, cur_idx = get_nearest_term(ed_idx+1,
+                    ed_idx+1+ADJ_SCOPE[1], ADJECTIVES, words_tags, "positive")
+        # handle negation sentence
+        if modifier:
+            if is_negative(cur_idx, words_tags):
+                modifier = NEGATION_PREFIX + modifier
+            phrases.append(" ".join([headterm, modifier]))
+    return phrases
 #========================End: strategy 1===========================
 
 
@@ -95,6 +128,9 @@ def main():
 
     print 'Adopting strategy 1 to extract phrases...'
     freq_phrase_extractor(in_paths, out_paths)
+
+def test():
+    pass
 
 if __name__ == "__main__":
     main()
