@@ -3,7 +3,7 @@
 
 import sys, nltk.data
 from stemmer.porterStemmer import PorterStemmer
-from global_setting import NOUN_POS, CHUNK_POS_ST, CHUNK_POS_MD
+from global_setting import NOUN_POS, CHUNK_POS_ST, CHUNK_POS_MD, ADJ_TERMINAL
 from global_setting import TERM_REMOVAL, PHRASE_SEP, NEGATIONS, NEGATION_SCOPE
 
 def ids_to_string(ids):
@@ -83,27 +83,34 @@ def update_dict(cnt_dict, key):
 
 # Filter keys in dict by number and its words
 def filter_term(cnt_dict, lower_num):
+    #added_dict = {}
     key_set = set([])
-    deleted_key = set([])
-    for key in cnt_dict.keys():
+    #deleted_key = set([])
+    '''for key in cnt_dict:
         if "/" in key:
             bi_terms = key.split("/")
-            if bi_terms[0] in cnt_dict:
-                cnt_dict[bi_terms[0]] += cnt_dict[key]
+            if bi_terms[0] in added_dict:
+                added_dict[bi_terms[0]] += cnt_dict[key]
             else:
-                cnt_dict[bi_terms[0]] = cnt_dict[key]
-            if bi_terms[1] in cnt_dict:
-                cnt_dict[bi_terms[1]] += cnt_dict[key]
+                added_dict[bi_terms[0]] = cnt_dict[key]
+            if bi_terms[1] in added_dict:
+                added_dict[bi_terms[1]] += cnt_dict[key]
             else:
-                cnt_dict[bi_terms[1]] = cnt_dict[key]
-            cnt_dict.clear(key)
+                added_dict[bi_terms[1]] = cnt_dict[key]
+            deleted_key.add(key)
         for term in TERM_REMOVAL:
             if term in key:
                 deleted_key.add(key)
 
+    for key in added_dict:
+        if key in cnt_dict:
+            cnt_dict[key] += added_dict[key]
+        else:
+            cnt_dict[key] = added_dict[key]
+
     for key in deleted_key:
         del cnt_dict[key]
-
+    '''
     for key in cnt_dict.keys():
         if cnt_dict[key] < lower_num:
             continue
@@ -167,10 +174,14 @@ def get_nearest_term(st_idx, ed_idx, pos_set, words_tags, direction):
         for i in range(st_idx, ed_idx):
             if words_tags[i][1] in pos_set:
                 return words_tags[i][0], i
+            elif words_tags[i][1] in ADJ_TERMINAL:
+                break
     elif direction == "negative":
         for i in range(ed_idx-1, st_idx-1, -1):
             if words_tags[i][1] in pos_set:
                 return words_tags[i][0], i
+            elif words_tags[i][1] in ADJ_TERMINAL:
+                break
     else:
         print 'direction wrong.'
         sys.exit(1)
@@ -191,3 +202,41 @@ def is_negative(cur_idx, words_tags):
             return True
     return False
 
+# Filter the keys of two dictionaries by frequency
+def filter_bidict_by_freq(first_dict, second_dict, first_cnt, second_cnt):
+    deleted_first_key = set([])
+    deleted_second_key = set([])
+
+    while True:
+        for key in first_dict:
+            total_num = sum(map(lambda x:x[1], first_dict[key].items()))
+            if total_num >= first_cnt:
+                continue
+            deleted_first_key.add(key)
+        for key in second_dict:
+            total_num = sum(map(lambda x:x[1], second_dict[key].items()))
+            if total_num >= second_cnt:
+                continue
+            deleted_second_key.add(key)
+
+        # converge and terminal
+        if len(deleted_first_key) == 0 and len(deleted_second_key) == 0:
+            break
+
+        # update dictionary
+        for deleted_key in deleted_first_key:
+            del first_dict[deleted_key]
+            for second_key in second_dict:
+                if deleted_key in second_dict[second_key]:
+                    del second_dict[second_key][deleted_key]
+        for deleted_key in deleted_second_key:
+            del second_dict[deleted_key]
+            for first_key in first_dict:
+                if deleted_key in first_dict[first_key]:
+                    del first_dict[first_key][deleted_key]
+
+    return first_dict.keys(), second_dict.keys()
+
+# Calculate the number of items the target item have interacted
+def getnum_for_dictkey(items):
+    pass

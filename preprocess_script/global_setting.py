@@ -21,10 +21,13 @@ PHRASE_SEP = "_"
 TERM_NUM_TD = [5, 5, 5]
 
 # Term removal dictionary
-TERM_REMOVAL = set(["http", "\"", "%", "<", ">", ":", "(", ")"])
+TERM_REMOVAL = set(["http", '"', "%", "<", ">", ":", "(", ")", "+"])
 
 # Adjectives used
 ADJECTIVES = set(["JJ", "JJR", "JJS"])
+
+# Adjective search terminal mark
+ADJ_TERMINAL = set(['"', ',', ':', '.', '(', ')', '+', '%'])
 
 # Adjective search scope
 ADJ_SCOPE = [3, 3]
