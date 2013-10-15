@@ -18,10 +18,13 @@ CHUNK_POS_MD = "I-NP"
 PHRASE_SEP = "_"
 
 # Term frequency threshold
-TERM_NUM_TD = [3, 3, 3]
+TERM_NUM_TD = [5, 5, 5]
+
+# Term removal dictionary
+TERM_REMOVAL = set(["http", "\"", "%", "<", ">", ":", "(", ")"])
 
 # Adjectives used
-ADJECTIVES = set(["JJ"])
+ADJECTIVES = set(["JJ", "JJR", "JJS"])
 
 # Adjective search scope
 ADJ_SCOPE = [3, 3]
@@ -34,3 +37,4 @@ NEGATION_PREFIX = "no-"
 
 # Negation search scope
 NEGATION_SCOPE = [4, 0]
+
