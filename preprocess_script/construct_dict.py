@@ -15,6 +15,19 @@ def convert_output(word_dict):
     word_list = map(lambda x:[x[1], x[0]], word_list)
     return word_list
 
+def call_output_dict(aspect_set, sentiment_set, out_aspect_path,
+        out_sentiment_path):
+    aspect_list = sorted(aspect_set)
+    sentiment_list = sorted(sentiment_set)
+
+    writer = csv.writer(open(out_aspect_path, "w"), lineterminator="\n")
+    outputrows = [[aspect, i+1] for i, aspect in enumerate(aspect_list)]
+    writer.writerows(outputrows)
+
+    writer = csv.writer(open(out_sentiment_path, "w"), lineterminator="\n")
+    outputrows = [[sentiment, i+1] for i, sentiment in enumerate(sentiment_list)]
+    writer.writerows(outputrows)
+
 if __name__ == "__main__":
     print 'Loading file paths...'
     paths = json.loads(open("SETTINGS.json").read())
