@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 #encoding=utf8
 
-import sys, nltk.data
+import re, sys, chardet, nltk.data
+from HTMLParser import HTMLParser
 from stemmer.porterStemmer import PorterStemmer
 from global_setting import NOUN_POS, CHUNK_POS_ST, CHUNK_POS_MD, ADJ_TERMINAL
 from global_setting import TERM_REMOVAL, PHRASE_SEP, NEGATIONS, NEGATION_SCOPE
+from global_setting import HEAD_TAIL_NONALPHANUMETRIC
 
 def ids_to_string(ids):
     return [" ".join(map(lambda x: str(x), id_pair)) for id_pair in ids]
@@ -236,6 +238,57 @@ def filter_bidict_by_freq(first_dict, second_dict, first_cnt, second_cnt):
                     del first_dict[first_key][deleted_key]
 
     return first_dict.keys(), second_dict.keys()
+
+# Check the legality of word
+html_parser_result = []
+html_parser = HTMLParser()
+html_parser.handle_data = html_parser_result.append
+def check_word(word):
+    '''
+    1.remove word with wrong character encoding;
+    2.replace html marks with NULL;
+    3.replace word's begining or end non-alphanumetric characters with NULL;
+    4.segment word with mark "/";
+    5.remove word with number;
+    6.if contains some positive or negative words, extract it;
+    '''
+    # 1.remove word with wrong character encoding;
+    if chardet.detect(word)["encoding"] != "ascii":
+        return None
+
+    # 2.replace html marks with NULL;
+    global html_parser, html_parser_result
+    html_parser.feed(word)
+    word = html_parser_result[0]
+    html_parser_result.pop()
+    if len(html_parser_result) != 0:
+        print 'Htmlparser error.'
+        sys.exit(1)
+    if word == "":
+        return None
+
+    # 3.replace word's begining or end non-alphanumetric characters with NULL;
+    word = HEAD_TAIL_NONALPHANUMETRIC.sub("", word)
+    if word == "":
+        return None
+
+    # 4.segment word with mark "/";
+    if "/" in word:
+        seg_result = word.split("/")
+    else:
+        seg_result = [word]
+
+    # 5.remove word with number;
+    checked_result = []
+    pattern = re.compile(r"\d+")
+    for word in seg_result:
+        if pattern.match(word):
+            continue
+        checked_result.append(word)
+
+    if len(checked_result) == 0 or len(checked_result) > 2:
+        return None
+    return checked_result
 
 # Calculate the number of items the target item have interacted
 def getnum_for_dictkey(items):
