@@ -250,20 +250,24 @@ def check_word(word):
     3.replace word's begining or end non-alphanumetric characters with NULL;
     4.segment word with mark "/";
     5.remove word with number;
-    6.if contains some positive or negative words, extract it;
+    6.remove word with illegal character within it
     '''
     # 1.remove word with wrong character encoding;
     if chardet.detect(word)["encoding"] != "ascii":
         return None
 
     # 2.replace html marks with NULL;
-    global html_parser, html_parser_result
+    '''global html_parser, html_parser_result
     html_parser.feed(word)
+    if len(html_parser_result) == 0:
+        return None
     word = html_parser_result[0]
-    html_parser_result.pop()
-    if len(html_parser_result) != 0:
-        print 'Htmlparser error.'
-        sys.exit(1)
+    while len(html_parser_result) != 0:
+        html_parser_result.pop()
+    if word == "":
+        return None '''
+    pattern = re.compile(r"<.*>")
+    word = pattern.sub("", word)
     if word == "":
         return None
 
@@ -280,11 +284,19 @@ def check_word(word):
 
     # 5.remove word with number;
     checked_result = []
-    pattern = re.compile(r"\d+")
+    pattern = re.compile(r".*\d+.*")
     for word in seg_result:
         if pattern.match(word):
             continue
+        # 6.remove word with illegal character within it
+        for char in TERM_REMOVAL:
+            if char in word:
+                word = ""
+                break
+        if word == "":
+            continue
         checked_result.append(word)
+
 
     if len(checked_result) == 0 or len(checked_result) > 2:
         return None
