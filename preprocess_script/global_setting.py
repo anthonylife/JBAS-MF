@@ -7,6 +7,8 @@
 @description: file "global_setting.py" setting some global constant variables.
 '''
 
+import re
+
 # Noun words
 NOUN_POS = set(["NN", "NNS"])
 
@@ -41,3 +43,5 @@ NEGATION_PREFIX = "no-"
 # Negation search scope
 NEGATION_SCOPE = [4, 0]
 
+# Match the non-alphanumetric parts of head and tail region of words
+HEAD_TAIL_NONALPHANUMETRIC = re.compile(r'^\W+|\W+$')
