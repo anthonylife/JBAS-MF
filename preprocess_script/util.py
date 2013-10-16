@@ -237,6 +237,9 @@ def filter_bidict_by_freq(first_dict, second_dict, first_cnt, second_cnt):
                 if deleted_key in first_dict[first_key]:
                     del first_dict[first_key][deleted_key]
 
+        deleted_first_key.clear()
+        deleted_second_key.clear()
+
     return first_dict.keys(), second_dict.keys()
 
 # Check the legality of word

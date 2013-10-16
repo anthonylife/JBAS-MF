@@ -31,7 +31,7 @@ def filter_term_by_legality(in_phrase_paths, out_phrase_paths, out_aspect_paths,
                 checked_aspects = check_word(aspects[j])
                 if checked_aspects == None:
                     continue
-                checked_modifiers = check_word(modifiers[i])
+                checked_modifiers = check_word(modifiers[j])
                 if checked_modifiers == None:
                     continue
                 for checked_aspect in checked_aspects:
@@ -44,11 +44,11 @@ def filter_term_by_legality(in_phrase_paths, out_phrase_paths, out_aspect_paths,
         modifier_dict = defaultdict(dict)
         for key in review_phrase:
             for phrase in review_phrase[key]:
-                if phrase[1] not in aspect_dict[phrase[0]]:
+                if phrase[1] in aspect_dict[phrase[0]]:
                     aspect_dict[phrase[0]][phrase[1]] += 1
                 else:
                     aspect_dict[phrase[0]][phrase[1]] = 1
-                if phrase[0] not in modifier_dict[phrase[1]]:
+                if phrase[0] in modifier_dict[phrase[1]]:
                     modifier_dict[phrase[1]][phrase[0]] += 1
                 else:
                     modifier_dict[phrase[1]][phrase[0]] = 1
@@ -66,8 +66,8 @@ def filter_term_by_legality(in_phrase_paths, out_phrase_paths, out_aspect_paths,
             if len(outputrow) > 1:
                 writer.writerow(outputrow)
         print 'Finish processing the file...'
-        print 'Pausing...'
-        raw_input()
+        #print 'Pausing...'
+        #raw_input()
 
 
 def main():
@@ -76,15 +76,16 @@ def main():
     in_phrase_paths = [paths["filter_data_dir1"]+paths["phrase_review_file"],
             paths["filter_data_dir2"]+paths["phrase_review_file"],
             paths["filter_data_dir3"]+paths["phrase_review_file"]]
-    out_phrase_paths = [paths["filter_data_dir1"]+paths["phrase_review_file"],
-            paths["filter_data_dir2"]+paths["phrase_review_file"],
-            paths["filter_data_dir3"]+paths["phrase_review_file"]]
+    out_phrase_paths = [paths["filter_data_dir1"]+paths["clean_phrase_review_file"],
+            paths["filter_data_dir2"]+paths["clean_phrase_review_file"],
+            paths["filter_data_dir3"]+paths["clean_phrase_review_file"]]
     out_aspect_paths = [paths["final_data_dir1"]+paths["aspect_dictionary_file"],
             paths["final_data_dir2"]+paths["aspect_dictionary_file"],
             paths["final_data_dir3"]+paths["aspect_dictionary_file"]]
     out_sentiment_paths = [paths["final_data_dir1"]+
             paths["sentiment_dictionary_file"],
-            paths["final_data_dir2"]+paths["sentiment_dictionary_file"]]
+            paths["final_data_dir2"]+paths["sentiment_dictionary_file"],
+            paths["final_data_dir3"]+paths["sentiment_dictionary_file"]]
 
     filter_term_by_legality(in_phrase_paths, out_phrase_paths, out_aspect_paths, out_sentiment_paths)
 

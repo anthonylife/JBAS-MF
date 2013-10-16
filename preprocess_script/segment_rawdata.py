@@ -52,7 +52,7 @@ def main():
             review_timestr = time.strftime('%Y-%m-%d %H:%M:%S',\
                     time.localtime(review_timestamp))
             review_text = lines[8].strip("\t\r\n").replace("<br />","").\
-                    replace("review/text: ", "").replace("\t\n", "")
+                    replace("review/text: ", "").replace("\t\n", "").replace("::", "")
 
             if len(review_text) < 2:
                 continue
@@ -116,7 +116,7 @@ def main():
             review_timestr = time.strftime('%Y-%m-%d %H:%M:%S',\
                     time.localtime(review_timestamp))
             review_text = lines[7].strip("\t\r\n").replace("<br />","").\
-                    replace("review/text: ", "").replace("\t\n", "")
+                    replace("review/text: ", "").replace("\t\n", "").replace("::", "")
 
             if len(review_text) < 4:
                 continue
@@ -178,7 +178,7 @@ def main():
             review_timestr = time.strftime('%Y-%m-%d %H:%M:%S',\
                     time.localtime(review_timestamp))
             review_text = lines[7].strip("\t\r\n").replace("<br />","").\
-                    replace("review/text: ", "").replace("\t\n", "")
+                    replace("review/text: ", "").replace("\t\n", "").replace("::", "")
 
             if len(review_text) < 2:
                 continue

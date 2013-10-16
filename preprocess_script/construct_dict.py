@@ -21,11 +21,11 @@ def call_output_dict(aspect_set, sentiment_set, out_aspect_path,
     sentiment_list = sorted(sentiment_set)
 
     writer = csv.writer(open(out_aspect_path, "w"), lineterminator="\n")
-    outputrows = [[aspect, i+1] for i, aspect in enumerate(aspect_list)]
+    outputrows = [[i+1, aspect] for i, aspect in enumerate(aspect_list)]
     writer.writerows(outputrows)
 
     writer = csv.writer(open(out_sentiment_path, "w"), lineterminator="\n")
-    outputrows = [[sentiment, i+1] for i, sentiment in enumerate(sentiment_list)]
+    outputrows = [[i+1, sentiment] for i, sentiment in enumerate(sentiment_list)]
     writer.writerows(outputrows)
 
 if __name__ == "__main__":
