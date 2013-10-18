@@ -27,7 +27,7 @@ def freq_phrase_extractor(in_paths, out_paths, reviewid_paths):
     for i, in_path in enumerate(in_paths):
         print 'Processing the %d file...' % (i+1)
         reviewid_set = set([line[0] for line in csv.reader(open(reviewid_paths[i]))])
-        word_freq = {}
+        aspect_freq = {}
         # extract head terms
         for line in open(in_path):
             line = line.strip("\n\t\r")
@@ -39,10 +39,10 @@ def freq_phrase_extractor(in_paths, out_paths, reviewid_paths):
             words_tags = parse_tagged_text(tagged_text)
             #print words_tags
             #raw_input()
-            word_freq = freq_filter_term(word_freq, words_tags)
+            aspect_freq = freq_filter_term(aspect_freq, words_tags)
             #print word_freq
             #raw_input()
-        head_terms = filter_term(word_freq, TERM_NUM_TD[i])
+        head_terms = filter_term(aspect_freq, TERM_NUM_TD[i])
         #print head_terms
         #raw_input()
 
@@ -66,7 +66,9 @@ def freq_phrase_extractor(in_paths, out_paths, reviewid_paths):
             if len(outputrow) == 1:
                 continue
             writer.writerow(outputrow)
-        print 'Finish the first file...'
+        print 'Finish processing the file...'
+        #raw_input()
+        #raw_input()
 
 
 def freq_filter_term(word_freq, words_tags):
@@ -151,12 +153,12 @@ def main():
     in_paths = [paths["filter_data_dir1"]+paths["tagged_review_file"],
             paths["filter_data_dir2"]+paths["tagged_review_file"],
             paths["filter_data_dir3"]+paths["tagged_review_file"]]
-    out_paths = [paths["filter_data_dir1"]+paths["phrase_review_file"],
-            paths["filter_data_dir2"]+paths["phrase_review_file"],
-            paths["filter_data_dir3"]+paths["phrase_review_file"]]
     reviewid_paths = [paths["filter_data_dir1"]+paths["reviewid_score_file"],
             paths["filter_data_dir2"]+paths["reviewid_score_file"],
             paths["filter_data_dir3"]+paths["reviewid_score_file"]]
+    out_paths = [paths["filter_data_dir1"]+paths["phrase_review_file"],
+            paths["filter_data_dir2"]+paths["phrase_review_file"],
+            paths["filter_data_dir3"]+paths["phrase_review_file"]]
 
     print 'Adopting strategy 1 to extract phrases...'
     freq_phrase_extractor(in_paths, out_paths, reviewid_paths)

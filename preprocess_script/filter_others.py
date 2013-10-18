@@ -10,12 +10,12 @@
 
 import csv, json
 
-def filter_line(infile, saved_set):
+def filter_line(infile, saved_set, sep):
     outputlines = []
     for line in open(infile):
         line = line.strip("\n\t\r")
 
-        bi_items = line.split(",")
+        bi_items = line.split(sep)
         if bi_items[0] in saved_set:
             outputlines.append(bi_items)
     return outputlines
@@ -43,16 +43,18 @@ def filter_data(old_time_file, old_score_file, old_text_file, old_reviewid_file,
     writer.writerows(outputlines)
 
     writer = csv.writer(open(new_time_file, "w"), lineterminator="\n")
-    outputlines = filter_line(old_time_file, reviewid_set)
+    outputlines = filter_line(old_time_file, reviewid_set, ",")
     writer.writerows(outputlines)
 
     writer = csv.writer(open(new_score_file, "w"), lineterminator="\n")
-    outputlines = filter_line(old_score_file, reviewid_set)
+    outputlines = filter_line(old_score_file, reviewid_set, ",")
     writer.writerows(outputlines)
 
-    writer = csv.writer(open(new_text_file, "w"), lineterminator="\n")
-    outputlines = filter_line(old_text_file, reviewid_set)
-    writer.writerows(outputlines)
+    wfd = open(new_text_file, "w")
+    outputlines = filter_line(old_text_file, reviewid_set, "::")
+    for line in outputlines:
+        wfd.write("%s::%s\n" % (line[0], line[1]))
+    wfd.close()
 
 def main():
     print 'Loading files paths...'
@@ -73,7 +75,7 @@ def main():
             old_user_item_review_file, filtered_user_file, filtered_item_file,
             new_time_file, new_score_file, new_text_file, new_user_item_review_file)
     print 'Finish filtering!'
-    raw_input()
+    #raw_input()
 
     print 'Start filtering in Amazon Moview (1)time, (2)score, (3)text according'
     old_time_file = paths["clean_data_dir2"] + paths["reviewid_time_file"]
@@ -90,7 +92,7 @@ def main():
             old_user_item_review_file, filtered_user_file, filtered_item_file,
             new_time_file, new_score_file, new_text_file, new_user_item_review_file)
     print 'Finish filtering!'
-    raw_input()
+    #raw_input()
 
     print 'Start filtering in Amazon Food (1)time, (2)score, (3)text according'
     old_time_file = paths["clean_data_dir3"] + paths["reviewid_time_file"]
