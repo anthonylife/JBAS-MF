@@ -23,6 +23,7 @@ def filter_term_by_legality(in_phrase_paths, out_phrase_paths, out_aspect_paths,
         writer = csv.writer(open(out_phrase_paths[i], "w"), lineterminator="\n")
 
         # check legality of word
+        print 'check legality of word'
         for line in csv.reader(open(in_phrase_path)):
             reviewid = line[0]
             aspects = map(lambda x:x.split(" ")[0], line[1:])
@@ -40,6 +41,7 @@ def filter_term_by_legality(in_phrase_paths, out_phrase_paths, out_aspect_paths,
                             checked_modifier])
 
         # filter aspect and modifier by frequency
+        print 'filter aspect and modifier by frequency'
         aspect_dict = defaultdict(dict)
         modifier_dict = defaultdict(dict)
         for key in review_phrase:
@@ -56,6 +58,7 @@ def filter_term_by_legality(in_phrase_paths, out_phrase_paths, out_aspect_paths,
                 modifier_dict, TERM_NUM_TD[i], TERM_NUM_TD[i])
 
         # construct dictionary and output
+        print 'construct dictionary and output'
         call_output_dict(aspect_set, modifier_set, out_aspect_paths[i],
                 out_sentiment_paths[i])
         for reviewid in review_phrase:
