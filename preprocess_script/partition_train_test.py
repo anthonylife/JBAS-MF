@@ -9,7 +9,7 @@
     according to the review's time information independent on users.
 '''
 
-import json, csv
+import sys, json, csv, argparse
 from collections import defaultdict
 from global_setting import RATIO_TRAIN_TEST
 
@@ -18,6 +18,7 @@ def partition_by_user_time(in_user_item_paths, in_review_time_paths,
         out_train_review_paths, out_test_review_paths):
     for i, user_item_review_path in enumerate(in_user_item_paths):
         print 'Processing the %d file...' % (i+1)
+        #print 'wrong code, exit'
         review_time = {}
         for line in csv.reader(open(in_review_time_paths[i])):
             review_time[line[0]] = line[1]
@@ -25,11 +26,9 @@ def partition_by_user_time(in_user_item_paths, in_review_time_paths,
         user_review = defaultdict(list)
         for line in csv.reader(open(user_item_review_path)):
             userid = line[0]
-            itemids = map(lambda x:x.split(" ")[0], line[1:])
             reviewids = map(lambda x:x.split(" ")[1], line[1:])
-            for itemid, reviewid in zip(itemids, reviewids):
-                user_review[userid].append([reviewid,
-                    review_time[reviewid]])
+            for reviewid in reviewids:
+                user_review[userid].append([reviewid, review_time[reviewid]])
 
         train_wfd = open(out_train_review_paths[i], "w")
         test_wfd = open(out_test_review_paths[i], "w")
@@ -39,7 +38,7 @@ def partition_by_user_time(in_user_item_paths, in_review_time_paths,
             user_train_num = int(round(len(reviewids)*RATIO_TRAIN_TEST))
             for reviewid in reviewids[0:user_train_num]:
                 train_wfd.write(reviewid + "\n")
-            for reviewid in reviewids[user_train_num]:
+            for reviewid in reviewids[user_train_num:]:
                 test_wfd.write(reviewid + "\n")
         train_wfd.close()
         test_wfd.close()
@@ -47,7 +46,7 @@ def partition_by_user_time(in_user_item_paths, in_review_time_paths,
 # without considering specific users
 def partition_by_time(in_review_time_paths, out_train_review_paths,
         out_test_review_paths):
-    for i, user_item_review_path in enumerate(in_review_time_paths):
+    for i in xrange(len(in_review_time_paths)):
         print 'Processing the %d file...' % (i+1)
         train_wfd = open(out_train_review_paths[i], "w")
         test_wfd = open(out_test_review_paths[i], "w")
@@ -64,9 +63,16 @@ def partition_by_time(in_review_time_paths, out_train_review_paths,
         test_wfd.close()
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-t', type=int, action='store', dest='partition_strategy',
+            help='Choice of partition strategy: "1" stands for partiion by time based on users, "2" represent partition by time without considering users.')
+    if len(sys.argv) != 3:
+        print 'python partition_train_test.py -t 1'
+        print 'python partition_train_test.py -t 2'
+        sys.exit(1)
+
     print 'Loading file paths...'
     paths = json.loads(open("SETTINGS.json").read())
-
     in_user_item_paths = [paths["final_data_dir1"]+
             paths["user_item_review_file"],
             paths["final_data_dir2"]+paths["user_item_review_file"],
@@ -83,10 +89,17 @@ def main():
             paths["test_reviewid_file"],
             paths["train_test_data_dir2"]+paths["test_reviewid_file"],
             paths["train_test_data_dir3"]+paths["test_reviewid_file"]]
-    #partition_by_user_time(in_user_item_paths, in_review_time_paths,
-    #        out_train_review_paths, out_test_review_paths)
-    partition_by_user_time(in_user_item_paths, in_review_time_paths,
-            out_train_review_paths, out_test_review_paths)
+
+    para = parser.parse_args()
+    if para.partition_strategy == 1:
+        partition_by_user_time(in_user_item_paths, in_review_time_paths,
+                out_train_review_paths, out_test_review_paths)
+    elif para.partition_strategy == 2:
+        partition_by_time(in_review_time_paths, out_train_review_paths,
+                out_test_review_paths)
+    else:
+        print 'error choice of partition strategy.'
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
