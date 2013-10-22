@@ -23,14 +23,14 @@ mv $dir1$user_item_review_file $dir1$user_item_review_file$bak_suf
 
 echo '\t2.Renaming raw files in Amazon Movie.'
 dir2='/home/anthonylife/Doctor/Code/MyPaperCode/JBAS-MF/data/Amazon-Movies/clean/'
-mv $dir2$score_file $dir1$score_file$bak_suf
-mv $dir2$text_file $dir1$text_file$bak_suf
-mv $dir2$time_file $dir1$time_file$bak_suf
-mv $dir2$user_item_review_file $dir1$user_item_review_file$bak_suf
+mv $dir2$score_file $dir2$score_file$bak_suf
+mv $dir2$text_file $dir2$text_file$bak_suf
+mv $dir2$time_file $dir2$time_file$bak_suf
+mv $dir2$user_item_review_file $dir2$user_item_review_file$bak_suf
 
 echo '\t3.Renaming raw files in Amazon Food.'
 dir3='/home/anthonylife/Doctor/Code/MyPaperCode/JBAS-MF/data/Amazon-Food/clean/'
-mv $dir3$score_file $dir1$score_file$bak_suf
-mv $dir3$text_file $dir1$text_file$bak_suf
-mv $dir3$time_file $dir1$time_file$bak_suf
-mv $dir3$user_item_review_file $dir1$user_item_review_file$bak_suf
+mv $dir3$score_file $dir3$score_file$bak_suf
+mv $dir3$text_file $dir3$text_file$bak_suf
+mv $dir3$time_file $dir3$time_file$bak_suf
+mv $dir3$user_item_review_file $dir3$user_item_review_file$bak_suf

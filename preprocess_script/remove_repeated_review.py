@@ -11,11 +11,21 @@
 
 import csv, json
 
-def output_biterm(in_path, out_path, saved_reviewid_set):
+# handling "csv" file
+def output_biterm_csv(in_path, out_path, saved_reviewid_set):
     wfd = open(out_path, "w")
     for line in csv.reader(open(in_path)):
-        if line[0]in saved_reviewid_set:
+        if line[0] in saved_reviewid_set:
             wfd.write(",".join(line) + "\n")
+    wfd.close()
+
+# handling "double-colon" file
+def output_biterm_colon(in_path, out_path, saved_reviewid_set):
+    wfd = open(out_path, "w")
+    for line in open(in_path):
+        reviewid = line.strip("\r\t\n").split("::")[0]
+        if reviewid in saved_reviewid_set:
+            wfd.write(line)
     wfd.close()
 
 def output_removed_result(in_triple_paths, in_score_paths, in_text_paths,
@@ -54,11 +64,11 @@ def output_removed_result(in_triple_paths, in_score_paths, in_text_paths,
         wfd.close()
 
         print 'Removing reviewids in file "reviewid_score_file"'
-        output_biterm(in_score_paths[i], out_score_paths[i], saved_reviewid_set)
+        output_biterm_csv(in_score_paths[i], out_score_paths[i], saved_reviewid_set)
         print 'Removing reviewids in file "reviewid_text_file"'
-        output_biterm(in_text_paths[i], out_text_paths[i], saved_reviewid_set)
+        output_biterm_colon(in_text_paths[i], out_text_paths[i], saved_reviewid_set)
         print 'Removing reviewids in file "reviewid_time_file"'
-        output_biterm(in_time_paths[i], out_time_paths[i], saved_reviewid_set)
+        output_biterm_csv(in_time_paths[i], out_time_paths[i], saved_reviewid_set)
 
         print 'Finish processing the %d file...' % (i+1)
 

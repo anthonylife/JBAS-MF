@@ -152,8 +152,6 @@ def run_filter2(in_phrase_review, in_user_item_review, out_user_file,
             pairid = review_user_item[reviewid]
             print pairid
             if pairid[0] in user_item_review:
-                if pairid[1] == "643981":
-                    print 'haha'
                 user_item_review[pairid[0]][0].remove(pairid[1])
                 user_item_review[pairid[0]][1].remove(reviewid)
             if pairid[1] in item_user_review:

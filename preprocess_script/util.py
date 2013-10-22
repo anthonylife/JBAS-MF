@@ -240,7 +240,7 @@ def filter_bidict_by_freq(first_dict, second_dict, first_cnt, second_cnt):
         deleted_first_key.clear()
         deleted_second_key.clear()
 
-    return first_dict.keys(), second_dict.keys()
+    return set(first_dict.keys()), set(second_dict.keys())
 
 # Check the legality of word
 html_parser_result = []

@@ -22,14 +22,18 @@ PHRASE_SEP = "_"
 # Term frequency threshold
 TERM_NUM_TD = [5, 5, 5]
 
+# Aspect and sentiment threshold
+AS_NUM_TD = [5, 5, 5]
+
 # Term removal dictionary
-TERM_REMOVAL = set(["http", '"', "%", "<", ">", ":", "(", ")", "+"])
+TERM_REMOVAL = set(["http", '"', "%", "<", ">", ":", "(", ")", "+", "'", "--",
+    "_", ".", ","])
 
 # Adjectives used
 ADJECTIVES = set(["JJ", "JJR", "JJS"])
 
 # Adjective search terminal mark
-ADJ_TERMINAL = set(['"', ',', ':', '.', '(', ')', '+', '%'])
+ADJ_TERMINAL = set(['"', ',', ':', '.', '(', ')', '+', '%', "'"])
 
 # Adjective search scope
 ADJ_SCOPE = [3, 3]
@@ -45,3 +49,6 @@ NEGATION_SCOPE = [4, 0]
 
 # Match the non-alphanumetric parts of head and tail region of words
 HEAD_TAIL_NONALPHANUMETRIC = re.compile(r'^\W+|\W+$')
+
+# Ratio of train and test data
+RATIO_TRAIN_TEST = 0.75

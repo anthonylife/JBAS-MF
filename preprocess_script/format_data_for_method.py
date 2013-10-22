@@ -50,24 +50,23 @@ def format_data_for_jbasmf(in_train_reviewid_path, in_test_reviewid_path,
     '''
     for i in xrange(len(in_train_reviewid_path)):
         print 'Processing the %d data...' % (i+1)
-        train_reviews = set([review for review in csv.reader(open(in_train_reviewid_path[i]))])
-        test_reviews = set([review for review in csv.reader(open(in_test_reviewid_path[i]))])
-        aspects_ids = dict([line for line in csv.reader(open(in_aspect_dict_path[i]))])
-        sentiments_ids = dict([line for line in csv.reader(open(in_sentiment_dict_path[i]))])
+        train_reviews = set([review[0] for review in csv.reader(open(in_train_reviewid_path[i]))])
+        test_reviews = set([review[0] for review in csv.reader(open(in_test_reviewid_path[i]))])
+        aspects_ids = dict([[line[1], line[0]] for line in csv.reader(open(in_aspect_dict_path[i]))])
+        sentiments_ids = dict([[line[1], line[0]] for line in csv.reader(open(in_sentiment_dict_path[i]))])
         reviews_scores = dict([line for line in csv.reader(open(in_review_score_path[i]))])
         reviews_phrases = phrase_map_id(aspects_ids, sentiments_ids, in_review_phrase_path[i])
         train_users_reviews, test_users_reviews, train_items_reviews, test_items_reviews = \
                 get_dict_from_triple(in_user_item_review_path[i], out_train_rating_jbasmf_path[i],
                     out_test_rating_jbasmf_path[i], reviews_scores, train_reviews, test_reviews)
         output_data(train_users_reviews, train_items_reviews, reviews_phrases,
-                out_train_user_jbasmf_path, out_train_item_jbasmf_path)
+                out_train_user_jbasmf_path[i], out_train_item_jbasmf_path[i])
         output_data(test_users_reviews, test_items_reviews, reviews_phrases,
-                out_test_user_jbasmf_path, out_test_item_jbasmf_path)
+                out_test_user_jbasmf_path[i], out_test_item_jbasmf_path[i])
 
 
 # output train and test data
-def output_data(users_reviews, items_reviews, reviews_scores, reviews_phrases,
-        out_train_user_file, out_train_item_file):
+def output_data(users_reviews, items_reviews, reviews_phrases, out_train_user_file, out_train_item_file):
     user_num = len(users_reviews)
     item_num = len(items_reviews)
 
@@ -88,7 +87,7 @@ def output_data(users_reviews, items_reviews, reviews_scores, reviews_phrases,
         outputrow = [itemid]
         for reviewid in items_reviews[itemid]:
             review_phrase = reviewid
-            for phrase in items_reviews[reviewid]:
+            for phrase in reviews_phrases[reviewid]:
                 review_phrase += " " + " ".join(phrase)
             outputrow.append(review_phrase)
         writer.writerow(outputrow)
@@ -120,11 +119,11 @@ def get_dict_from_triple(in_path, out_train_path, out_test_path, review_scores,
             if review_id in train_reviews:
                 train_users_reviews[line[0]].append(review_id)
                 train_items_reviews[item_id].append(review_id)
-                train_user_item_rating.append([line[0], item_id, review_scores[review_id]])
+                train_user_item_rating.append([line[0], item_id, format(float(review_scores[review_id]),'.2f')])
             elif review_id in test_reviews:
                 test_users_reviews[line[0]].append(review_id)
                 test_items_reviews[item_id].append(review_id)
-                item_user_item_rating.append([line[0], item_id, review_scores[review_id]])
+                test_user_item_rating.append([line[0], item_id, format(float(review_scores[review_id]),'.2f')])
             else:
                 print 'review id key error.'
                 sys.exit(0)
@@ -157,9 +156,9 @@ def main():
             paths["final_data_dir2"]+paths["aspect_dictionary_file"],
             paths["final_data_dir3"]+paths["aspect_dictionary_file"]]
     in_review_score_path = [paths["final_data_dir1"]+
-            paths["sentiment_dictionary_file"],
-            paths["final_data_dir2"]+paths["aspect_dictionary_file"],
-            paths["final_data_dir3"]+paths["aspect_dictionary_file"]]
+            paths["reviewid_score_file"],
+            paths["final_data_dir2"]+paths["reviewid_score_file"],
+            paths["final_data_dir3"]+paths["reviewid_score_file"]]
     in_review_phrase_path = [paths["final_data_dir1"]+
             paths["phrase_review_file"],
             paths["final_data_dir2"]+paths["phrase_review_file"],
@@ -170,28 +169,28 @@ def main():
             paths["final_data_dir3"]+paths["user_item_review_file"]]
     out_train_user_jbasmf_path = [paths["train_test_data_dir1"]+
             paths["train_user_jbasmf_file"],
-            paths["final_data_dir2"]+paths["train_user_jbasmf_file"],
-            paths["final_data_dir3"]+paths["train_user_jbasmf_file"]]
+            paths["train_test_data_dir2"]+paths["train_user_jbasmf_file"],
+            paths["train_test_data_dir3"]+paths["train_user_jbasmf_file"]]
     out_train_item_jbasmf_path = [paths["train_test_data_dir1"]+
             paths["train_item_jbasmf_file"],
-            paths["final_data_dir2"]+paths["train_item_jbasmf_file"],
-            paths["final_data_dir3"]+paths["train_item_jbasmf_file"]]
+            paths["train_test_data_dir2"]+paths["train_item_jbasmf_file"],
+            paths["train_test_data_dir3"]+paths["train_item_jbasmf_file"]]
     out_train_rating_jbasmf_path = [paths["train_test_data_dir1"]+
             paths["train_rating_jbasmf_file"],
-            paths["final_data_dir2"]+paths["train_rating_jbasmf_file"],
-            paths["final_data_dir3"]+paths["train_rating_jbasmf_file"]]
+            paths["train_test_data_dir2"]+paths["train_rating_jbasmf_file"],
+            paths["train_test_data_dir3"]+paths["train_rating_jbasmf_file"]]
     out_test_user_jbasmf_path = [paths["train_test_data_dir1"]+
             paths["test_user_jbasmf_file"],
-            paths["final_data_dir2"]+paths["test_user_jbasmf_file"],
-            paths["final_data_dir3"]+paths["test_user_jbasmf_file"]]
+            paths["train_test_data_dir2"]+paths["test_user_jbasmf_file"],
+            paths["train_test_data_dir3"]+paths["test_user_jbasmf_file"]]
     out_test_item_jbasmf_path = [paths["train_test_data_dir1"]+
             paths["test_item_jbasmf_file"],
-            paths["final_data_dir2"]+paths["test_item_jbasmf_file"],
-            paths["final_data_dir3"]+paths["test_item_jbasmf_file"]]
+            paths["train_test_data_dir2"]+paths["test_item_jbasmf_file"],
+            paths["train_test_data_dir3"]+paths["test_item_jbasmf_file"]]
     out_test_rating_jbasmf_path = [paths["train_test_data_dir1"]+
             paths["test_rating_jbasmf_file"],
-            paths["final_data_dir2"]+paths["test_rating_jbasmf_file"],
-            paths["final_data_dir3"]+paths["test_rating_jbasmf_file"]]
+            paths["train_test_data_dir2"]+paths["test_rating_jbasmf_file"],
+            paths["train_test_data_dir3"]+paths["test_rating_jbasmf_file"]]
 
     format_data_for_jbasmf(in_train_reviewid_path, in_test_reviewid_path,
             in_aspect_dictionary_path, in_sentiment_dictionary_path,

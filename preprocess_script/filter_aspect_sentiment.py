@@ -5,14 +5,14 @@
 @author: Wei Zhang
 @date: 2013/10/10
 @description: file "filter_aspect_sentiment.py" continues check legality of
-            aspect and sentiment words which is not finished in "extract_phrase.py"
+    aspect and sentiment words which is not finished in "extract_phrase.py"
 '''
 
 import json, csv
 from collections import defaultdict
 
 from util import check_word, filter_bidict_by_freq
-from global_setting import TERM_NUM_TD
+from global_setting import AS_NUM_TD
 from construct_dict import call_output_dict
 
 def filter_term_by_legality(in_phrase_paths, out_phrase_paths, out_aspect_paths,
@@ -37,8 +37,13 @@ def filter_term_by_legality(in_phrase_paths, out_phrase_paths, out_aspect_paths,
                     continue
                 for checked_aspect in checked_aspects:
                     for checked_modifier in checked_modifiers:
-                        review_phrase[reviewid].append([checked_aspect,
-                            checked_modifier])
+                        if reviewid == "7449010":
+                            print checked_aspects
+                            print checked_modifiers
+                            raw_input()
+                        if len(checked_aspect) > 1 and len(checked_modifier) > 1:
+                            review_phrase[reviewid].append([checked_aspect,
+                                checked_modifier])
 
         # filter aspect and modifier by frequency
         print 'filter aspect and modifier by frequency'
@@ -55,7 +60,7 @@ def filter_term_by_legality(in_phrase_paths, out_phrase_paths, out_aspect_paths,
                 else:
                     modifier_dict[phrase[1]][phrase[0]] = 1
         aspect_set, modifier_set = filter_bidict_by_freq(aspect_dict,
-                modifier_dict, TERM_NUM_TD[i], TERM_NUM_TD[i])
+                modifier_dict, AS_NUM_TD[i], AS_NUM_TD[i])
 
         # construct dictionary and output
         print 'construct dictionary and output'
@@ -63,6 +68,9 @@ def filter_term_by_legality(in_phrase_paths, out_phrase_paths, out_aspect_paths,
                 out_sentiment_paths[i])
         for reviewid in review_phrase:
             outputrow = [reviewid]
+            if reviewid == "7449010":
+                print review_phrase[reviewid]
+                raw_input()
             for pair in review_phrase[reviewid]:
                 if pair[0] in aspect_set and pair[1] in modifier_set:
                     outputrow.append(" ".join(pair))
