@@ -54,8 +54,8 @@ def scale_and_output(reviewid_map, in_path, out_path):
             min_score = float(line[1])
         if float(line[1]) > max_score:
             max_score = float(line[1])
-    outputrows = map(lambda x: [x[0], 1.0 + 4.0*(x[1]-min_score)/(max_score-
-        min_score)], outputrows)
+    outputrows = map(lambda x: [x[0], "%.2f" % (1.0 + 4.0*(x[1]-min_score)/(max_score-
+        min_score))], outputrows)
     writer = csv.writer(open(out_path, "w"), lineterminator="\n")
     writer.writerows(outputrows)
 

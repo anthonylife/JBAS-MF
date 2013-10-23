@@ -73,8 +73,6 @@ def filter_data2(in_time_file, in_score_file, in_phrase_file, in_triple_file,
     review_set = set([line.strip("\r\t\n") for line in open(filter_review_file)])
     aspect_set = set(line[1] for line in csv.reader(open(aspect_dictionary_file)))
     sentiment_set = set([line[1] for line in csv.reader(open(sentiment_dictionary_file))])
-    print list(aspect_set)[1:5]
-    raw_input()
     output_biterm(in_time_file, out_time_file, review_set)
     output_biterm(in_score_file, out_score_file, review_set)
     output_triple(in_triple_file, out_triple_file, user_set, item_set, review_set)

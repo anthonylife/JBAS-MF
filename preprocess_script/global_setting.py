@@ -20,10 +20,10 @@ CHUNK_POS_MD = "I-NP"
 PHRASE_SEP = "_"
 
 # Term frequency threshold
-TERM_NUM_TD = [5, 5, 5]
+TERM_NUM_TD = [5, 10, 5]
 
 # Aspect and sentiment threshold
-AS_NUM_TD = [5, 5, 5]
+AS_NUM_TD = [5, 10, 5]
 
 # Term removal dictionary
 TERM_REMOVAL = set(["http", '"', "%", "<", ">", ":", "(", ")", "+", "'", "--",

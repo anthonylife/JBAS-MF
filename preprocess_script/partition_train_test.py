@@ -57,7 +57,7 @@ def partition_by_time(in_review_time_paths, out_train_review_paths,
         train_num = int(round(len(reviewids)*RATIO_TRAIN_TEST))
         for reviewid in reviewids[0:train_num]:
             train_wfd.write(reviewid + "\n")
-        for reviewid in reviewids[train_num]:
+        for reviewid in reviewids[train_num:]:
             test_wfd.write(reviewid + "\n")
         train_wfd.close()
         test_wfd.close()

@@ -153,8 +153,8 @@ def main():
             paths["filter_data_dir3"]+paths["aspect_dictionary_file"]]
     in_sentiment_dictionary_path = [paths["filter_data_dir1"]+
             paths["sentiment_dictionary_file"],
-            paths["filter_data_dir2"]+paths["aspect_dictionary_file"],
-            paths["filter_data_dir3"]+paths["aspect_dictionary_file"]]
+            paths["filter_data_dir2"]+paths["sentiment_dictionary_file"],
+            paths["filter_data_dir3"]+paths["sentiment_dictionary_file"]]
     in_review_score_path = [paths["final_data_dir1"]+
             paths["reviewid_score_file"],
             paths["final_data_dir2"]+paths["reviewid_score_file"],

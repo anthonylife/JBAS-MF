@@ -188,88 +188,6 @@ def run_filter2(in_phrase_review, in_user_item_review, out_user_file,
         wfd.write("%d,%s\n" % (i+1, sentimentid))
     wfd.close()
 
-# as memory limitation, we process file "Amazon Moviews"
-def run_filter3(in_phrase_review, in_user_item_review, out_user_file,
-        out_item_file, user_lnum, item_lnum, out_aspect_file,
-        out_sentiment_file, out_review_file, as_lnum):
-    user_item = defaultdict(set)
-    item_user = defaultdict(set)
-
-    review_set = set([line[0] for line in csv.reader(open(in_phrase_review))])
-    for line in csv.reader(open(in_user_item_review)):
-        user_id = line[0]
-        item_ids = [pair.split(" ")[0] for pair in line[1:]]
-        review_ids = [pair.split(" ")[1] for pair in line[1:]]
-        for review_id, item_id in zip(review_ids, item_ids):
-            if review_id in review_set:
-                user_item[user_id].add(item_id)
-                item_user[item_id].add(user_id)
-
-    print 'Original user number: %d, original item number: %d\n' % \
-            (len(user_item), len(item_user))
-
-    # filtering user and items iteratively
-    while True:
-        removed_user_ids, user_item = filter_entity(user_item, user_lnum)
-        removed_item_ids, item_user = filter_entity(item_user, item_lnum)
-        if len(removed_user_ids) == 0 and len(removed_item_ids) == 0:
-            break
-
-        if len(removed_user_ids) > 0:
-            item_user = update_ids(item_user, removed_user_ids)
-        if len(removed_item_ids) > 0:
-            user_item = update_ids(user_item, removed_item_ids)
-
-        print 'Updated user number: %d, updated item number: %d\n' % \
-                (len(user_item), len(item_user))
-
-    # ouput filtered users and items
-    wfd = open(out_user_file, "w")
-    output_one_item(user_item.keys(), wfd)
-    wfd.close()
-    wfd = open(out_item_file, "w")
-    output_one_item(item_user.keys(), wfd)
-    wfd.close()
-
-    # output filtered reviews, aspects and sentiments
-    saved_reviews = set([])
-    for line in csv.reader(open(in_user_item_review)):
-        user_id = line[0]
-        item_ids = [pair.split(" ")[0] for pair in line[1:]]
-        review_ids = [pair.split(" ")[1] for pair in line[1:]]
-        for review_id, item_id in zip(review_ids, item_ids):
-            if user_id in user_item:
-                for i, item_id in enumerate(item_ids):
-                    if item_id in user_item[user_id]:
-                        saved_reviews.add(review_ids[i])
-
-    wfd = open(out_review_file, "w")
-    output_one_item(saved_reviews, wfd)
-    wfd.close()
-
-    saved_aspect = set([])
-    saved_sentiment = set([])
-    for line in csv.reader(open(in_phrase_review)):
-        review_id = line[0]
-        aspects = map(lambda x:x.split(" ")[0], line[1:])
-        sentiments = map(lambda x:x.split(" ")[1], line[1:])
-        if review_id in saved_reviews:
-            for i in xrange(len(aspects)):
-                saved_aspect.add(aspects[i])
-                saved_sentiment.add(sentiments[i])
-
-    aspect_ids = sorted(saved_aspect)
-    wfd = open(out_aspect_file, "w")
-    for i, aspectid in enumerate(aspect_ids):
-        wfd.write("%d,%s\n" % (i+1, aspectid))
-    wfd.close()
-
-    sentiment_ids = sorted(saved_sentiment)
-    wfd = open(out_sentiment_file, "w")
-    for i, sentimentid in enumerate(sentiment_ids):
-        wfd.write("%d,%s\n" % (i+1, sentimentid))
-    wfd.close()
-
 def low_num_detection(triple_dict, low_num, tuple_type):
     deleted_keys = set([])
     for key in triple_dict:
@@ -284,6 +202,7 @@ def low_num_detection(triple_dict, low_num, tuple_type):
             sys.exit(1)
         deleted_keys.add(key)
     return deleted_keys
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -306,7 +225,6 @@ def main():
 
     if len(sys.argv) != 15:
         print 'python filter_user_item.py -c1 5 -c2 10 -m1 5 -m2 10 -f1 5 -f2 10 -t 1'
-        print 'python filter_user_item.py -c1 5 -c2 10 -m1 5 -m2 10 -f1 5 -f2 10 -t 2'
         sys.exit(1)
 
     para = parser.parse_args()
@@ -368,7 +286,7 @@ def main():
         aspect_dict_file = paths["filter_data_dir2"] + paths["aspect_dictionary_file"]
         sentiment_dict_file = paths["filter_data_dir2"] + paths["sentiment_dictionary_file"]
         filter_review_file = paths["filter_data_dir2"] + paths["new_filter_review_file"]
-        run_filter3(clean_review_file, user_item_review_file, filter_user_file,
+        run_filter2(clean_review_file, user_item_review_file, filter_user_file,
                 filter_item_file, para.cellar_user_num_td, para.cellar_item_num_td,
                 aspect_dict_file, sentiment_dict_file, filter_review_file, AS_NUM_TD[1])
         print 'Finish filtering!'
