@@ -147,14 +147,14 @@ def main():
             paths["test_reviewid_file"],
             paths["train_test_data_dir2"]+paths["test_reviewid_file"],
             paths["train_test_data_dir3"]+paths["test_reviewid_file"]]
-    in_aspect_dictionary_path = [paths["final_data_dir1"]+
+    in_aspect_dictionary_path = [paths["filter_data_dir1"]+
             paths["aspect_dictionary_file"],
-            paths["final_data_dir2"]+paths["aspect_dictionary_file"],
-            paths["final_data_dir3"]+paths["aspect_dictionary_file"]]
-    in_sentiment_dictionary_path = [paths["final_data_dir1"]+
+            paths["filter_data_dir2"]+paths["aspect_dictionary_file"],
+            paths["filter_data_dir3"]+paths["aspect_dictionary_file"]]
+    in_sentiment_dictionary_path = [paths["filter_data_dir1"]+
             paths["sentiment_dictionary_file"],
-            paths["final_data_dir2"]+paths["aspect_dictionary_file"],
-            paths["final_data_dir3"]+paths["aspect_dictionary_file"]]
+            paths["filter_data_dir2"]+paths["aspect_dictionary_file"],
+            paths["filter_data_dir3"]+paths["aspect_dictionary_file"]]
     in_review_score_path = [paths["final_data_dir1"]+
             paths["reviewid_score_file"],
             paths["final_data_dir2"]+paths["reviewid_score_file"],

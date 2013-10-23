@@ -87,9 +87,9 @@ def run_filter2(in_phrase_review, in_user_item_review, out_user_file,
             if review_id in review_set:
                 if user_id not in user_item_review:
                     user_item_review[user_id] = [set([]), set([])]
-                if user_id == "78138" and item_id == "643981":
-                    print review_id
-                    raw_input()
+                #if user_id == "78138" and item_id == "643981":
+                #    print review_id
+                #    raw_input()
                 user_item_review[user_id][0].add(item_id)
                 user_item_review[user_id][1].add(review_id)
                 if item_id not in item_user_review:
@@ -99,8 +99,8 @@ def run_filter2(in_phrase_review, in_user_item_review, out_user_file,
                 review_user_item[review_id] = [user_id, item_id]
 
     for line in csv.reader(open(in_phrase_review)):
-        aspects = map(lambda x:x[0], line[1:])
-        sentiments = map(lambda x:x[1], line[1:])
+        aspects = map(lambda x:x.split(" ")[0], line[1:])
+        sentiments = map(lambda x:x.split(" ")[1], line[1:])
         review_aspect_sentiment[line[0]] = [set([]), set([])]
         for aspect in aspects:
             aspect_review[aspect].add(line[0])
@@ -150,7 +150,6 @@ def run_filter2(in_phrase_review, in_user_item_review, out_user_file,
         # update related dicts by removing deleted reviews
         for reviewid in deleted_reviews:
             pairid = review_user_item[reviewid]
-            print pairid
             if pairid[0] in user_item_review:
                 user_item_review[pairid[0]][0].remove(pairid[1])
                 user_item_review[pairid[0]][1].remove(reviewid)
@@ -271,9 +270,9 @@ def main():
         user_item_review_file=paths["filter_data_dir1"]+paths["user_item_review_file"]
         filter_user_file = paths["filter_data_dir1"] + paths["new_filter_user_file"]
         filter_item_file = paths["filter_data_dir1"] + paths["new_filter_item_file"]
-        aspect_dict_file = paths["final_data_dir1"] + paths["aspect_dictionary_file"]
-        sentiment_dict_file = paths["final_data_dir1"] + paths["sentiment_dictionary_file"]
-        filter_review_file = paths["final_data_dir1"] + paths["new_filter_review_file"]
+        aspect_dict_file = paths["filter_data_dir1"] + paths["aspect_dictionary_file"]
+        sentiment_dict_file = paths["filter_data_dir1"] + paths["sentiment_dictionary_file"]
+        filter_review_file = paths["filter_data_dir1"] + paths["new_filter_review_file"]
         run_filter2(clean_review_file, user_item_review_file, filter_user_file,
                 filter_item_file, para.cellar_user_num_td, para.cellar_item_num_td,
                 aspect_dict_file, sentiment_dict_file, filter_review_file, AS_NUM_TD[0])
@@ -284,9 +283,9 @@ def main():
         user_item_review_file=paths["filter_data_dir2"]+paths["user_item_review_file"]
         filter_user_file = paths["filter_data_dir2"] + paths["new_filter_user_file"]
         filter_item_file = paths["filter_data_dir2"] + paths["new_filter_item_file"]
-        aspect_dict_file = paths["final_data_dir2"] + paths["aspect_dictionary_file"]
-        sentiment_dict_file = paths["final_data_dir2"] + paths["sentiment_dictionary_file"]
-        filter_review_file = paths["final_data_dir2"] + paths["new_filter_review_file"]
+        aspect_dict_file = paths["filter_data_dir2"] + paths["aspect_dictionary_file"]
+        sentiment_dict_file = paths["filter_data_dir2"] + paths["sentiment_dictionary_file"]
+        filter_review_file = paths["filter_data_dir2"] + paths["new_filter_review_file"]
         run_filter2(clean_review_file, user_item_review_file, filter_user_file,
                 filter_item_file, para.cellar_user_num_td, para.cellar_item_num_td,
                 aspect_dict_file, sentiment_dict_file, filter_review_file, AS_NUM_TD[1])
@@ -297,9 +296,9 @@ def main():
         user_item_review_file=paths["filter_data_dir3"]+paths["user_item_review_file"]
         filter_user_file = paths["filter_data_dir3"] + paths["new_filter_user_file"]
         filter_item_file = paths["filter_data_dir3"] + paths["new_filter_item_file"]
-        aspect_dict_file = paths["final_data_dir3"] + paths["aspect_dictionary_file"]
-        sentiment_dict_file = paths["final_data_dir3"] + paths["sentiment_dictionary_file"]
-        filter_review_file = paths["final_data_dir3"] + paths["new_filter_review_file"]
+        aspect_dict_file = paths["filter_data_dir3"] + paths["aspect_dictionary_file"]
+        sentiment_dict_file = paths["filter_data_dir3"] + paths["sentiment_dictionary_file"]
+        filter_review_file = paths["filter_data_dir3"] + paths["new_filter_review_file"]
         run_filter2(clean_review_file, user_item_review_file, filter_user_file,
                 filter_item_file, para.cellar_user_num_td, para.cellar_item_num_td,
                 aspect_dict_file, sentiment_dict_file, filter_review_file, AS_NUM_TD[2])

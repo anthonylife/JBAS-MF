@@ -293,7 +293,7 @@ def check_word(word):
             continue
         # 6.remove word with illegal character within it
         for char in TERM_REMOVAL:
-            if char in word:
+            if char in word or word.startswith("-") or word.endswith("-"):
                 word = ""
                 break
         if word == "":

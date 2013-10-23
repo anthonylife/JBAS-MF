@@ -37,10 +37,7 @@ def filter_term_by_legality(in_phrase_paths, out_phrase_paths, out_aspect_paths,
                     continue
                 for checked_aspect in checked_aspects:
                     for checked_modifier in checked_modifiers:
-                        if reviewid == "7449010":
-                            print checked_aspects
-                            print checked_modifiers
-                            raw_input()
+                        # ensure the length of each word exceeding 1.
                         if len(checked_aspect) > 1 and len(checked_modifier) > 1:
                             review_phrase[reviewid].append([checked_aspect,
                                 checked_modifier])
@@ -68,9 +65,9 @@ def filter_term_by_legality(in_phrase_paths, out_phrase_paths, out_aspect_paths,
                 out_sentiment_paths[i])
         for reviewid in review_phrase:
             outputrow = [reviewid]
-            if reviewid == "7449010":
-                print review_phrase[reviewid]
-                raw_input()
+            #if reviewid == "7449010":
+            #    print review_phrase[reviewid]
+            #    raw_input()
             for pair in review_phrase[reviewid]:
                 if pair[0] in aspect_set and pair[1] in modifier_set:
                     outputrow.append(" ".join(pair))

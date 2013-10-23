@@ -6,8 +6,11 @@
 
 
 echo '1. Extract data from the original file (e.g. /Doctor/Data/Reviews/...) and output each to part of them to the separate files.'
+echo '1.1 Extract data from raw data files.'
 python segment_rawdata.py
+echo '1.2 Rename get files gotten from previous step.'
 ./rename_raw_file.sh
+echo '1.3 Remove multiple repeated pairs of (userid, itemid) with different reviewid, we save the latest reviewid.'
 python remove_repeated_review.py
 
 echo '2. Filter users and items according to the frequency of users and items.'
@@ -39,7 +42,6 @@ python renumber_id.py
 
 echo '5. Do some data formation work formatting work for different works.' 
 echo '5.1 partition the data into training and test set (1) according to the reviews time information for each user, or (2) according to the reviews time information independent on users.'
-python partition_train_test.py
-echo 'description: file "filter_data_for_method.py" convert all processed data into
-format to meet requirements of different methods.'
+python partition_train_test.py -t 2
+echo '5.2 Convert all processed data into format to meet requirements of different methods.'
 python format_data_for_method.py
