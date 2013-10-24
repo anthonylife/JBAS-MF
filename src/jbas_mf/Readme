@@ -1,0 +1,16 @@
+****************************************************************************
+
+                              JBAS-MF
+       A C/C++ Implementation of Joint Bayesian Aspect-matched sentiment
+       and matrix factorization model using Gibbs Sampling for Parameter
+       Estimation and Inference.
+
+                https//github.com/anthonylife/JBAS-MF
+                         Copyright (C) 2013 by
+                                Wei Zhang
+                          zhangwei.ltt@gmail.com
+
+****************************************************************************
+
+1. Introduction of Code File:
+
