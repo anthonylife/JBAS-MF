@@ -16,10 +16,11 @@ namespace utils{
     vector<char *> split_str(char * in_str, char sep);
     // extract substr
     char * sub_str(int s_idx, int e_idx, char * raw_str);
-
     // string split function
     vector<string> split_str(string in_str, char sep);
 
+    // 
+    int parse_args()
 }
 
 #endif

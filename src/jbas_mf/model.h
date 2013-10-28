@@ -17,19 +17,22 @@ class Model{
     public:
         // ----- model hyper-parameters ----- //
         // hyper-parameter for aspect-matched sentiment topic model
+        int K;          // aspect topic number
+        int RL;         // rating size (i.e., number of rating levels)
         double eta0;    // parameter of prior for multinomial of rating
-        double eta1;    // ... for multinomial of sentiment word 
+        double eta1_s;  // ... for multinomial of sentiment word 
+        double eta1_ns; // ... for multinomial of sentiment word 
         double eta2;    // ... for multinomial of aspect word
         double alpha;   // ... for multinomial of aspect topic
         
         // user, item preference hidden vector (Gaussian Wishart dist)
+        int ndim_pref;  // dimension of user/item latent factor
         mat W_u;        // scale matrix for wishart distribution of user
         int df_u;       // degree of freedom for wishart distributio of user
-        rowvec mu0_u;    // mean vector of gaussian distribution of user
-
+        rowvec mu0_u;   // mean vector of gaussian distribution of user
         mat W_i;        // scale matrix for wishart distribution of item
         int df_i;       // degree of freedom for wishart distributio of item
-        rowvec mu0_i;    // mean vector of gaussian distribution of item
+        rowvec mu0_i;   // mean vector of gaussian distribution of item
         
         // user, item bias rating (Gaussian Gamma dist)
         double a_u;     // shape for wishart distribution of user
@@ -41,11 +44,12 @@ class Model{
         double mu1_i;   // mean value of gaussian distribution of item
         
         // ----- data and model related variables ----- //
-        int K;          // topic number
         int T;          // number of total reviews
-        int R;          // rating size (i.e., number of rating levels)
         int V_a;        // vocabulary size of head term
         int V_s;        // vocabulary size of sentiment word
+        double ** psai;       // psai: topic-rating distribution, size K*RL
+        double ** phi;        // phi: rating-sentiment distribution, size RL*V_s
+        double ** beta;       // beta: word-aspect distribution, size K*V_a
 
         // memory allocation consideration, compute them at each iteration
         //  without saving them
@@ -62,9 +66,23 @@ class Model{
 
         dataset * ptrndata;     // pointer to training dataset instance
         dataset * ptstdata;     // pointer to test dataset instance
+        
+        string train_user_file;
+        string train_item_file;
+        string train_rating_file;
+        string test_user_file;
+        string test_item_file;
+        string test_rating_file;
 
         // ----- model related functions ----- //
+        void init_model();
+        void init_est();
+        void init_estc();
+        void estimate();        
+        void init_inf();
+        void inference();
         void save_model(string model_path);
+        void load_model();
 };
 
 #endif
