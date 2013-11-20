@@ -1,0 +1,274 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+BUFF_SIZE_LONG	setting.h	22;"	d
+CLBFGSCPP	lbfgs.cpp	/^CLBFGSCPP::CLBFGSCPP(void)$/;"	f	class:CLBFGSCPP
+CLBFGSCPP	lbfgs.h	/^class CLBFGSCPP$/;"	c
+CMcsrch	lbfgs.cpp	/^CMcsrch::CMcsrch(void)$/;"	f	class:CMcsrch
+CMcsrch	lbfgs.h	/^class CMcsrch$/;"	c
+DUP_USER_TERM	setting.h	37;"	d
+Dataset	dataset.cpp	/^Dataset::Dataset(){$/;"	f	class:Dataset
+Dataset	dataset.h	/^class Dataset{$/;"	c
+ExceptionWithIflag	lbfgs.cpp	/^ExceptionWithIflag::ExceptionWithIflag( int i, wstring s )$/;"	f	class:ExceptionWithIflag
+ExceptionWithIflag	lbfgs.cpp	/^ExceptionWithIflag::ExceptionWithIflag()$/;"	f	class:ExceptionWithIflag
+ExceptionWithIflag	lbfgs.h	/^class ExceptionWithIflag : public exception$/;"	c
+K	model.h	/^        int K;          \/\/ aspect topic number$/;"	m	class:Model
+MODEL_STATUS_DEBUG	setting.h	34;"	d
+MODEL_STATUS_EST	setting.h	31;"	d
+MODEL_STATUS_ESTC	setting.h	32;"	d
+MODEL_STATUS_PRED	setting.h	33;"	d
+MODEL_STATUS_UNKNOWN	setting.h	30;"	d
+Model	model.h	/^class Model{$/;"	c
+NUM_ATTR_OF_REVIEW_FILE	setting.h	23;"	d
+RET_ERROR_STATUS	setting.h	27;"	d
+RET_OK_STATUS	setting.h	26;"	d
+RL	model.h	/^        int RL;         \/\/ rating size (i.e., number of rating levels)$/;"	m	class:Model
+RW	model.h	/^        int RW;         \/\/ number of total reviews$/;"	m	class:Model
+RW_t	model.h	/^        int RW_t;       \/\/ for test data$/;"	m	class:Model
+Review	dataset.cpp	/^Review::Review(){$/;"	f	class:Review
+Review	dataset.h	/^class Review{$/;"	c
+USER_SENTI_SET	setting.h	38;"	d
+UserItem	dataset.cpp	/^UserItem::UserItem(){$/;"	f	class:UserItem
+UserItem	dataset.cpp	/^UserItem::UserItem(int pref_ndim, int as_ndim){$/;"	f	class:UserItem
+UserItem	dataset.h	/^class UserItem{$/;"	c
+V_a	model.h	/^        int V_a;        \/\/ vocabulary size of head term$/;"	m	class:Model
+V_s	model.h	/^        int V_s;        \/\/ vocabulary size of sentiment word$/;"	m	class:Model
+_GENERATOR_H	generator.h	10;"	d
+_IO_H	io.h	9;"	d
+_MODEL_H	model.h	9;"	d
+_SETTING_H	setting.h	9;"	d
+_USER_ITEM_H	dataset.h	9;"	d
+_UTILS_H	utils.h	8;"	d
+add_item	dataset.cpp	/^void Dataset::add_item(UserItem * item, int idx){$/;"	f	class:Dataset
+add_review	dataset.cpp	/^void Dataset::add_review(UserItem * item, int idx){$/;"	f	class:Dataset
+add_user	dataset.cpp	/^void Dataset::add_user(UserItem * user, int idx){$/;"	f	class:Dataset
+alloc_matrix	utils.cpp	/^int **  utils::alloc_matrix(int xdim, int ydim){$/;"	f	class:utils
+alloc_vector	utils.cpp	/^int * utils:alloc_vector(int ndim){$/;"	f
+alpha	model.h	/^        double alpha;   \/\/ ... for multinomial of aspect topic$/;"	m	class:Model
+aspect_dict	model.h	/^        string aspect_dict;$/;"	m	class:Model
+beta	lbfgs.h	/^	double gnorm, stp1, ftol, *stp, ys, yy, sq, yr, beta, xnorm;$/;"	m	class:CLBFGSCPP
+beta	model.h	/^        mat beta;       \/\/ beta: word-aspect distribution, size K*V_a$/;"	m	class:Model
+beta_t	model.h	/^        mat beta_t;$/;"	m	class:Model
+bound	lbfgs.h	/^	int iter, nfun, point, ispt, iypt, maxfev, *info, bound, npt, cp, i, *nfev, inmc, iycn, iscn;$/;"	m	class:CLBFGSCPP
+brackt	lbfgs.h	/^	bool *brackt;$/;"	m	class:CMcsrch
+cnt_file_line	utils.cpp	/^int utils::cnt_file_line(string in_file){$/;"	f	class:utils
+content	lbfgs.h	/^	wstring content;$/;"	m	class:ExceptionWithIflag
+cp	lbfgs.h	/^	int iter, nfun, point, ispt, iypt, maxfev, *info, bound, npt, cp, i, *nfev, inmc, iycn, iscn;$/;"	m	class:CLBFGSCPP
+data_dir	model.h	/^        string data_dir;$/;"	m	class:Model
+data_type	model.h	/^        int data_type;          \/\/ choice of data set$/;"	m	class:Model
+dataset	dataset.cpp	/^Dataset::dataset(int nU, int nI, int nR){$/;"	f	class:Dataset
+daxpy	lbfgs.cpp	/^void CLBFGSCPP::daxpy ( int n , double da , double dx[] , int ix0, int incx , $/;"	f	class:CLBFGSCPP
+ddot	lbfgs.cpp	/^double CLBFGSCPP::ddot ( int n, double dx[], int ix0, int incx, $/;"	f	class:CLBFGSCPP
+debug	model.h	/^        bool debug;             \/\/ "True" for debug$/;"	m	class:Model
+dg	lbfgs.h	/^	double dg, dgm, dginit, dgtes, dgtest;$/;"	m	class:CMcsrch
+dginit	lbfgs.h	/^	double dg, dgm, dginit, dgtes, dgtest;$/;"	m	class:CMcsrch
+dgm	lbfgs.h	/^	double dg, dgm, dginit, dgtes, dgtest;$/;"	m	class:CMcsrch
+dgtes	lbfgs.h	/^	double dg, dgm, dginit, dgtes, dgtest;$/;"	m	class:CMcsrch
+dgtest	lbfgs.h	/^	double dg, dgm, dginit, dgtes, dgtest;$/;"	m	class:CMcsrch
+dgx	lbfgs.h	/^	double* dgx, *dgxm, *dgy, *dgym;$/;"	m	class:CMcsrch
+dgxm	lbfgs.h	/^	double* dgx, *dgxm, *dgy, *dgym;$/;"	m	class:CMcsrch
+dgy	lbfgs.h	/^	double* dgx, *dgxm, *dgy, *dgym;$/;"	m	class:CMcsrch
+dgym	lbfgs.h	/^	double* dgx, *dgxm, *dgy, *dgym;$/;"	m	class:CMcsrch
+estimate	model.cpp	/^void Model::estimate(){$/;"	f	class:Model
+eta0	model.h	/^        double eta0;    \/\/ parameter of prior for multinomial of rating$/;"	m	class:Model
+eta1_ns	model.h	/^        double eta1_ns; \/\/ ... for multinomial of sentiment word $/;"	m	class:Model
+eta1_s	model.h	/^        double eta1_s;  \/\/ ... for multinomial of sentiment word $/;"	m	class:Model
+eta2	model.h	/^        double eta2;    \/\/ ... for multinomial of aspect word$/;"	m	class:Model
+finish	lbfgs.h	/^	bool finish;$/;"	m	class:CLBFGSCPP
+finit	lbfgs.h	/^	double finit, ftest1, fm;$/;"	m	class:CMcsrch
+fm	lbfgs.h	/^	double finit, ftest1, fm;$/;"	m	class:CMcsrch
+ftest1	lbfgs.h	/^	double finit, ftest1, fm;$/;"	m	class:CMcsrch
+ftol	lbfgs.h	/^	double gnorm, stp1, ftol, *stp, ys, yy, sq, yr, beta, xnorm;$/;"	m	class:CLBFGSCPP
+func1	test.cpp	/^int func1(){$/;"	f
+func3	test.cpp	/^int func3(){$/;"	f
+func4	test.cpp	/^int func4(){$/;"	f
+func5	test.cpp	/^int func5(){$/;"	f
+func6	test.cpp	/^int func6(){$/;"	f
+fx	lbfgs.h	/^	double *fx, *fxm, *fy, *fym;$/;"	m	class:CMcsrch
+fxm	lbfgs.h	/^	double *fx, *fxm, *fy, *fym;$/;"	m	class:CMcsrch
+fy	lbfgs.h	/^	double *fx, *fxm, *fy, *fym;$/;"	m	class:CMcsrch
+fym	lbfgs.h	/^	double *fx, *fxm, *fy, *fym;$/;"	m	class:CMcsrch
+get_nterm	dataset.cpp	/^int Dataset::get_nterm(string aspect_file, string sentiment_file, int &V_a, int &V_s){$/;"	f	class:Dataset
+gnorm	lbfgs.h	/^	double gnorm, stp1, ftol, *stp, ys, yy, sq, yr, beta, xnorm;$/;"	m	class:CLBFGSCPP
+gtol	lbfgs.cpp	/^double CLBFGSCPP::gtol = 0.9;$/;"	m	class:CLBFGSCPP	file:
+gtol	lbfgs.h	/^	static double gtol;$/;"	m	class:CLBFGSCPP
+headtermid	dataset.h	/^    int * headtermid;  \/\/ id of headterm$/;"	m	class:Review
+i	lbfgs.h	/^	int iter, nfun, point, ispt, iypt, maxfev, *info, bound, npt, cp, i, *nfev, inmc, iycn, iscn;$/;"	m	class:CLBFGSCPP
+id	dataset.h	/^    int id;             \/\/ id of user\/item$/;"	m	class:UserItem
+iflag	lbfgs.h	/^	int iflag;$/;"	m	class:ExceptionWithIflag
+info	lbfgs.h	/^	int iter, nfun, point, ispt, iypt, maxfev, *info, bound, npt, cp, i, *nfev, inmc, iycn, iscn;$/;"	m	class:CLBFGSCPP
+infoc	lbfgs.h	/^	int* infoc;\/\/ = new int[1], $/;"	m	class:CMcsrch
+init_as_factor	dataset.h	/^    void init_as_factor(int ndim){pref_factor = zeros<colvec>(ndim);}$/;"	f	class:UserItem
+init_est	model.cpp	/^int Model::init_est(){$/;"	f	class:Model
+init_model	model.cpp	/^int Model::init_model(int argc, char ** argv){$/;"	f	class:Model
+init_pref_factor	dataset.h	/^    void init_pref_factor(int ndim){pref_factor = 0.1*randn<colvec>(ndim);}$/;"	f	class:UserItem
+inmc	lbfgs.h	/^	int iter, nfun, point, ispt, iypt, maxfev, *info, bound, npt, cp, i, *nfev, inmc, iycn, iscn;$/;"	m	class:CLBFGSCPP
+is_seed	dataset.cpp	/^int Dataset::is_seed(int wordid){$/;"	f	class:Dataset
+iscn	lbfgs.h	/^	int iter, nfun, point, ispt, iypt, maxfev, *info, bound, npt, cp, i, *nfev, inmc, iycn, iscn;$/;"	m	class:CLBFGSCPP
+ispt	lbfgs.h	/^	int iter, nfun, point, ispt, iypt, maxfev, *info, bound, npt, cp, i, *nfev, inmc, iycn, iscn;$/;"	m	class:CLBFGSCPP
+item_bias	dataset.h	/^    colvec item_bias;   \/\/ item rating bias vector$/;"	m	class:Dataset
+item_bias_file	model.h	/^        string item_bias_file;$/;"	m	class:Model
+item_factor	dataset.h	/^    mat item_factor;    \/\/ item latent factor matrix$/;"	m	class:Dataset
+item_factor_file	model.h	/^        string item_factor_file;$/;"	m	class:Model
+itemid	dataset.h	/^    int itemid;     \/\/ id of corresponding item$/;"	m	class:Review
+itemid2idx	dataset.h	/^    unordered_map<int, int> itemid2idx;   \/\/ for not storing "item" by id and for id absence$/;"	m	class:Dataset
+items	dataset.h	/^    UserItem * items;       \/\/ item instance array$/;"	m	class:Dataset
+iter	lbfgs.h	/^	int iter, nfun, point, ispt, iypt, maxfev, *info, bound, npt, cp, i, *nfev, inmc, iycn, iscn;$/;"	m	class:CLBFGSCPP
+iycn	lbfgs.h	/^	int iter, nfun, point, ispt, iypt, maxfev, *info, bound, npt, cp, i, *nfev, inmc, iycn, iscn;$/;"	m	class:CLBFGSCPP
+iypt	lbfgs.h	/^	int iter, nfun, point, ispt, iypt, maxfev, *info, bound, npt, cp, i, *nfev, inmc, iycn, iscn;$/;"	m	class:CLBFGSCPP
+j	lbfgs.h	/^	int j;\/\/  = 0;$/;"	m	class:CMcsrch
+lambda	model.h	/^        colvec lambda;      \/\/ model regression parameter$/;"	m	class:Model
+lb1	lbfgs.cpp	/^void CLBFGSCPP::lb1 ( int iprint[] , int iter , int nfun , double gnorm , int n , $/;"	f	class:CLBFGSCPP
+lbfgs	lbfgs.cpp	/^void CLBFGSCPP::lbfgs ( int n , int m , double x[] , double f , double g[] , $/;"	f	class:CLBFGSCPP
+length	dataset.h	/^    int length;     \/\/ length of review$/;"	m	class:Review
+m_mcsrch	lbfgs.h	/^	CMcsrch m_mcsrch;$/;"	m	class:CLBFGSCPP
+main	main.cpp	/^int main(int argc, char ** argv){$/;"	f
+main	test.cpp	/^int main(){$/;"	f
+map_reviewid_to_idx	dataset.cpp	/^int Dataset::map_reviewid_to_idx(){$/;"	f	class:Dataset
+max3	lbfgs.cpp	/^double CMcsrch::max3( double x, double y, double z )$/;"	f	class:CMcsrch
+maxfev	lbfgs.h	/^	int iter, nfun, point, ispt, iypt, maxfev, *info, bound, npt, cp, i, *nfev, inmc, iycn, iscn;$/;"	m	class:CLBFGSCPP
+mcsrch	lbfgs.cpp	/^void CMcsrch::mcsrch ( int n , double x[] , double f , double g[] , double s[] ,$/;"	f	class:CMcsrch
+mcstep	lbfgs.cpp	/^void CMcsrch::mcstep ( double stx[] , double fx[] , double dx[] , double sty[], double fy[],$/;"	f	class:CMcsrch
+model_beta_file	model.h	/^        string model_beta_file; $/;"	m	class:Model
+model_dir	model.h	/^        string model_dir;           \/\/ directory of model files$/;"	m	class:Model
+model_item_bias_file	model.h	/^        string model_item_bias_file;$/;"	m	class:Model
+model_item_pref_file	model.h	/^        string model_item_pref_file;$/;"	m	class:Model
+model_phi_file	model.h	/^        string model_phi_file; $/;"	m	class:Model
+model_psai_file	model.h	/^        string model_psai_file;     $/;"	m	class:Model
+model_status	model.h	/^        int model_status;       \/\/ status of modeling$/;"	m	class:Model
+model_user_bias_file	model.h	/^        string model_user_bias_file;$/;"	m	class:Model
+model_user_pref_file	model.h	/^        string model_user_pref_file;$/;"	m	class:Model
+multinomial	generator.cpp	/^void multinomial (int *count, int n, int k, const rowvec &p){$/;"	f
+multinormal	generator.cpp	/^void multinormal(rowvec &out, const rowvec &mean, const mat &disp){$/;"	f
+nI	dataset.h	/^    int nI;         \/\/ number of items$/;"	m	class:Dataset
+nR	dataset.h	/^    int nR;         \/\/ number of reviews$/;"	m	class:Dataset
+nU	dataset.h	/^    int nU;         \/\/ number of users$/;"	m	class:Dataset
+na_z	model.h	/^        int ** na_z;    \/\/ na_z[i][j]:number of headterm i to aspect j, V_a * K.$/;"	m	class:Model
+na_z_t	model.h	/^        int ** na_z_t;$/;"	m	class:Model
+nasum_i	model.h	/^        int * nasum_i;  \/\/ nasum[k]:number of headterm to aspect topic k (item).$/;"	m	class:Model
+nasum_i_t	model.h	/^        int * nasum_i_t;$/;"	m	class:Model
+nasum_u	model.h	/^        int * nasum_u;  \/\/ nasum[k]:number of headterm to aspect topic k (user).$/;"	m	class:Model
+nasum_u_t	model.h	/^        int * nasum_u_t;$/;"	m	class:Model
+nburn	model.h	/^        int nburn;              \/\/ number of burn-in iteration$/;"	m	class:Model
+nd_ri	model.h	/^        int ** nd_ri;   \/\/ nd_ri[i][j]:number of sentiment terms to rating r, RW*RL.$/;"	m	class:Model
+nd_ri_t	model.h	/^        int ** nd_ri_t;$/;"	m	class:Model
+nd_zi	model.h	/^        int ** nd_zi;   \/\/ nd_zi[i][j]:number of headterms aspect topic j, RW*K.$/;"	m	class:Model
+nd_zi_t	model.h	/^        int ** nd_zi_t; $/;"	m	class:Model
+nd_zu	model.h	/^        int ** nd_zu;   \/\/ nd_zu[i][j]:number of headterms to aspect topic j, RW*K.$/;"	m	class:Model
+nd_zu_t	model.h	/^        int ** nd_zu_t;$/;"	m	class:Model
+ndim_pref	model.h	/^        int ndim_pref;  \/\/ dimension of user\/item latent factor$/;"	m	class:Model
+ndsum	model.h	/^        int * ndsum;    \/\/ ndsum[i]:number of headterm\/sentiment in review set i.$/;"	m	class:Model
+ndsum	model.h	/^        int * ndsum;$/;"	m	class:Model
+neg_seed	dataset.h	/^    unordered_set<int> neg_seed;     \/\/ negative seed words$/;"	m	class:Dataset
+nfev	lbfgs.h	/^	int iter, nfun, point, ispt, iypt, maxfev, *info, bound, npt, cp, i, *nfev, inmc, iycn, iscn;$/;"	m	class:CLBFGSCPP
+nfevaluations	lbfgs.h	/^	int nfevaluations() { return nfun; }$/;"	f	class:CLBFGSCPP
+nfun	lbfgs.h	/^	int iter, nfun, point, ispt, iypt, maxfev, *info, bound, npt, cp, i, *nfev, inmc, iycn, iscn;$/;"	m	class:CLBFGSCPP
+niters	model.h	/^        int niters;             \/\/ number of gibbs iteration$/;"	m	class:Model
+niters_t	model.h	/^        int niters_t;$/;"	m	class:Model
+npt	lbfgs.h	/^	int iter, nfun, point, ispt, iypt, maxfev, *info, bound, npt, cp, i, *nfev, inmc, iycn, iscn;$/;"	m	class:CLBFGSCPP
+nreview	dataset.h	/^    int nreview;        \/\/ number of reviews user\/item contains$/;"	m	class:UserItem
+ns_r	model.h	/^        int ** ns_r;    \/\/ ns_r[i][j]:number of sentiment word i to rating j, V_s*RL$/;"	m	class:Model
+ns_r_t	model.h	/^        int ** ns_r_t;$/;"	m	class:Model
+nssum	model.h	/^        int * nssum;    \/\/ nssum[r]:number of sentiment words assigned to rating r.$/;"	m	class:Model
+nssum_t	model.h	/^        int * nssum_t;$/;"	m	class:Model
+p5	lbfgs.h	/^	double p5, p66;$/;"	m	class:CMcsrch
+p66	lbfgs.h	/^	double p5, p66;$/;"	m	class:CMcsrch
+parse_args	model.cpp	/^int parse_args(int argc, char ** argv){$/;"	f
+parse_args	model.h	/^        void parse_args;                \/\/ parse parameters form command line $/;"	m	class:Model
+parse_item_line	dataset.cpp	/^vector<Review> UserItem::parse_item_line(char * line){$/;"	f	class:UserItem
+parse_user_line	dataset.cpp	/^void UserItem::parse_user_line(char * line){$/;"	f	class:UserItem
+phi	model.h	/^        mat phi;        \/\/ phi: rating-sentiment distribution, size RL*V_s$/;"	m	class:Model
+phi_t	model.h	/^        mat phi_t;$/;"	m	class:Model
+point	lbfgs.h	/^	int iter, nfun, point, ispt, iypt, maxfev, *info, bound, npt, cp, i, *nfev, inmc, iycn, iscn;$/;"	m	class:CLBFGSCPP
+pos_seed	dataset.h	/^    unordered_set<int> pos_seed;     \/\/ postive seed words$/;"	m	class:Dataset
+pretraining	model.h	/^        bool pretraining;       \/\/ "True" for pretraining$/;"	m	class:Model
+psai	model.h	/^        mat psai;       \/\/ psai: topic-rating distribution, size K*RL$/;"	m	class:Model
+psai_t	model.h	/^        mat psai_t;$/;"	m	class:Model
+ptrndata	model.h	/^        dataset * ptrndata;     \/\/ pointer to training dataset instance$/;"	m	class:Model
+ptstdata	model.h	/^        dataset * ptstdata;     \/\/ pointer to test dataset instance$/;"	m	class:Model
+r_s	dataset.h	/^    int * r_s;      \/\/ rating assignment of sentiment words in each doc for item$/;"	m	class:Review
+rating_mat	dataset.h	/^    sp_mat rating_mat;  \/\/ rating sparse matrix of user\/item$/;"	m	class:Dataset
+rdirichlet	generator.cpp	/^void rdirichlet (rowvec &x, rowvec const &phi, int dim){$/;"	f
+read_data	dataset.cpp	/^int Dataset::read_data(string user_file, string item_file, string review_file, Model * tmodel){$/;"	f	class:Dataset
+read_item_data	dataset.cpp	/^int Dataset::read_item_data(string item_file, int ndim){$/;"	f	class:Dataset
+read_review_data	dataset.cpp	/^int Dataset:read_review_data(string review_file){$/;"	f
+read_seed_words	dataset.cpp	/^int Dataset::read_seed_words(string seed_pos_file, string seed_neg_file){$/;"	f	class:Dataset
+read_user_data	dataset.cpp	/^int Dataset::read_user_data(string user_file, int pref_ndim, int as_ndim){$/;"	f	class:Dataset
+reviewid	dataset.h	/^    int reviewid;   \/\/ id of current review$/;"	m	class:Review
+reviewid2idx	dataset.h	/^    unordered_map<int, int> reviewid2idx; \/\/ ...$/;"	m	class:Dataset
+reviewid_set	dataset.h	/^    int * reviewid_set;     \/\/ reviewid list$/;"	m	class:UserItem
+reviewidx_set	dataset.h	/^    int * reviewidx_set;    \/\/ array index of reviews$/;"	m	class:UserItem
+reviews	dataset.h	/^    Review * reviews;       \/\/ review instance array$/;"	m	class:Dataset
+rexp	generator.cpp	/^double rexp(double scale){$/;"	f
+rgamma	generator.cpp	/^double rgamma (double shape, double scale){$/;"	f
+rigamma	generator.cpp	/^double rigamma (double shape, double scale){$/;"	f
+rinit_factor	dataset.cpp	/^void Dataset::rinit_factor(int ndim_factor){$/;"	f	class:Dataset
+rinvertwishart	generator.cpp	/^void rinvertwishart (mat &wishart, const mat &LAMDA, int m){$/;"	f
+rlognorm	generator.cpp	/^double rlognorm (double mu, double sigma){$/;"	f
+rnorm	generator.cpp	/^double rnorm(double u, double sigma){$/;"	f
+rnormal	generator.cpp	/^double rnormal(double mu, double sigma){$/;"	f
+rweibull	generator.cpp	/^double rweibull(double shape, double scale){$/;"	f
+rwishart	generator.cpp	/^void rwishart (mat &wishart, const mat &LAMDA, int m){$/;"	f
+sampling_user_hyper	model.cpp	/^void Model::sampling_user_hyper(){$/;"	f	class:Model
+saved_step	model.h	/^        int saved_step;         \/\/ iteration step of collecting samples$/;"	m	class:Model
+seed_neg_file	model.h	/^        string seed_neg_file;$/;"	m	class:Model
+seed_pos_file	model.h	/^        string seed_pos_file;$/;"	m	class:Model
+sentiment_dict	model.h	/^        string sentiment_dict;$/;"	m	class:Model
+sentimentid	dataset.h	/^    int * sentimentid; \/\/ id of sentiment$/;"	m	class:Review
+set_default_values	model.cpp	/^void Model::set_default_values(){$/;"	f	class:Model
+show_help	main.cpp	/^void show_help(){$/;"	f
+sigma_i	model.h	/^        double sigma_i; \/\/ inverse of variance (precision), simplied by eye matrix $/;"	m	class:Model
+sigma_reg	model.h	/^        double sigma_reg;   \/\/ scale matrix of Gaussian prior distribution$/;"	m	class:Model
+sigma_u	model.h	/^        double sigma_u; \/\/ inverse of variance (precision), simplied by eye matrix $/;"	m	class:Model
+solution_cache	lbfgs.h	/^	double* solution_cache;$/;"	m	class:CLBFGSCPP
+solve_regpara	model.cpp	/^void Model::solve_regpara(){$/;"	f	class:Model
+split_str	utils.cpp	/^vector<string> utils::split_str(string in_str, char sep){$/;"	f	class:utils
+sq	lbfgs.h	/^	double gnorm, stp1, ftol, *stp, ys, yy, sq, yr, beta, xnorm;$/;"	m	class:CLBFGSCPP
+sqr	lbfgs.cpp	/^double CMcsrch::sqr( double x )$/;"	f	class:CMcsrch
+stage1	lbfgs.h	/^	bool stage1;$/;"	m	class:CMcsrch
+stmax	lbfgs.h	/^	double stmin, stmax;$/;"	m	class:CMcsrch
+stmin	lbfgs.h	/^	double stmin, stmax;$/;"	m	class:CMcsrch
+stp	lbfgs.h	/^	double gnorm, stp1, ftol, *stp, ys, yy, sq, yr, beta, xnorm;$/;"	m	class:CLBFGSCPP
+stp1	lbfgs.h	/^	double gnorm, stp1, ftol, *stp, ys, yy, sq, yr, beta, xnorm;$/;"	m	class:CLBFGSCPP
+stpmax	lbfgs.cpp	/^double CLBFGSCPP::stpmax = 1e20;$/;"	m	class:CLBFGSCPP	file:
+stpmax	lbfgs.h	/^	static double stpmax;$/;"	m	class:CLBFGSCPP
+stpmin	lbfgs.cpp	/^double CLBFGSCPP::stpmin = 1e-20;$/;"	m	class:CLBFGSCPP	file:
+stpmin	lbfgs.h	/^	static double stpmin ;$/;"	m	class:CLBFGSCPP
+str_split	utils.cpp	/^vector<char *> utils::str_split(char * in_str, char sep){$/;"	f	class:utils
+stx	lbfgs.h	/^	double *stx, *sty;$/;"	m	class:CMcsrch
+sty	lbfgs.h	/^	double *stx, *sty;$/;"	m	class:CMcsrch
+sub_str	utils.cpp	/^char * utils::sub_str(int s_idx, int e_idx, char * raw_str){$/;"	f	class:utils
+test_item_file	model.h	/^        string test_item_file;$/;"	m	class:Model
+test_len	test.cpp	/^void test_len(char *b){$/;"	f
+test_rating_file	model.h	/^        string test_rating_file;$/;"	m	class:Model
+test_user_file	model.h	/^        string test_user_file;$/;"	m	class:Model
+tmp_W_i	model.cpp	/^    mat tmp_W_i;$/;"	v
+toString	lbfgs.cpp	/^wstring ExceptionWithIflag::toString()$/;"	f	class:ExceptionWithIflag
+train_item_file	model.h	/^        string train_item_file;$/;"	m	class:Model
+train_rating_file	model.h	/^        string train_rating_file;$/;"	m	class:Model
+train_user_file	model.h	/^        string train_user_file;$/;"	m	class:Model
+user_bias	dataset.h	/^    colvec user_bias;   \/\/ user rating bias vector$/;"	m	class:Dataset
+user_bias_file	model.h	/^        string user_bias_file;$/;"	m	class:Model
+user_factor	dataset.h	/^    mat user_factor;    \/\/ user latent factor matrix$/;"	m	class:Dataset
+user_factor_file	model.h	/^        string user_factor_file;$/;"	m	class:Model
+userid	dataset.h	/^    int userid;     \/\/ id of corresponding user$/;"	m	class:Review
+userid2idx	dataset.h	/^    unordered_map<int, int> userid2idx;   \/\/ for not storing "user" by id and for id absence$/;"	m	class:Dataset
+users	dataset.h	/^    UserItem * users;       \/\/ user instance array$/;"	m	class:Dataset
+utils	utils.h	/^namespace utils{$/;"	n
+w	lbfgs.h	/^	double* w;$/;"	m	class:CLBFGSCPP
+width	lbfgs.h	/^	double width, width1, xtrapf;$/;"	m	class:CMcsrch
+width1	lbfgs.h	/^	double width, width1, xtrapf;$/;"	m	class:CMcsrch
+xnorm	lbfgs.h	/^	double gnorm, stp1, ftol, *stp, ys, yy, sq, yr, beta, xnorm;$/;"	m	class:CLBFGSCPP
+xtrapf	lbfgs.h	/^	double width, width1, xtrapf;$/;"	m	class:CMcsrch
+yr	lbfgs.h	/^	double gnorm, stp1, ftol, *stp, ys, yy, sq, yr, beta, xnorm;$/;"	m	class:CLBFGSCPP
+ys	lbfgs.h	/^	double gnorm, stp1, ftol, *stp, ys, yy, sq, yr, beta, xnorm;$/;"	m	class:CLBFGSCPP
+yy	lbfgs.h	/^	double gnorm, stp1, ftol, *stp, ys, yy, sq, yr, beta, xnorm;$/;"	m	class:CLBFGSCPP
+z_ai	dataset.h	/^    int * z_ai;     \/\/ aspect topic assignment of head term in each doc for item$/;"	m	class:Review
+z_au	dataset.h	/^    int * z_au;     \/\/ aspect topic assignment of head term in each doc for user$/;"	m	class:Review
+~CLBFGSCPP	lbfgs.cpp	/^CLBFGSCPP::~CLBFGSCPP(void)$/;"	f	class:CLBFGSCPP
+~CMcsrch	lbfgs.cpp	/^CMcsrch::~CMcsrch(void)$/;"	f	class:CMcsrch
+~ExceptionWithIflag	lbfgs.cpp	/^ExceptionWithIflag::~ExceptionWithIflag()$/;"	f	class:ExceptionWithIflag
+~dataset	dataset.cpp	/^Dataset::~dataset(){$/;"	f	class:Dataset

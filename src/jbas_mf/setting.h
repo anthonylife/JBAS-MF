@@ -16,7 +16,8 @@
 #include <map>
 #include <vector>
 #include <armadillo>
-
+#include <cmath>
+#include <tr1/unordered_map>
 
 // ----- Constant variables ----- //
 #define BUFF_SIZE_LONG 1000000
@@ -31,8 +32,17 @@
 #define	MODEL_STATUS_EST	1
 #define	MODEL_STATUS_ESTC	2
 #define	MODEL_STATUS_INF	3
+#define MODEL_STATUS_DEBUG  4
 
+// evaluation method
+#define EVAL_RMSE   0
+#define EVAL_PERPLEXITY 1
 
-// ----- Debug control variables ----- //
+// debug control variables
+#define DUP_USER_TERM
+#define USER_SENTI_SET
+#define CONT_DEBUG
+
+// other marco definition
 
 #endif

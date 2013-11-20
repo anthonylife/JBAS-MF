@@ -10,13 +10,35 @@
 using namespace std;
 
 int main(int argc, char ** argv){
-    model my_model;
+    model jbasmf;
+    
+    if (jbasmf.init_model(argc, argv)) {
+	    show_help();
+	    return 1;
+    }
+    
+    if (jbasmf.model_status == MODEL_STATUS_EST || jbasmf.model_status == MODEL_STATUS_ESTC || jbasmf.model_status == MODEL_STATUS_DEBUG){
+        // model parameter estimation
+        jbasmf.estimate();
+    }
+
+    if (jbasmf.model_status == MODEL_STATUS_INF){
+        // inference on new data
+        jbasmf.inference();
+    }
+    
     return 0; 
 }
 
 void show_help(){
-    cout << "Command line usage:\n";
-    cout << "\tjbasmf -inf -est "
-    printf("\tjbasmf -est -alpha <double> -beta <double> -ntopics <int> -niters <int> -savestep <int> -twords <int> -dfile <string>\n");
-
+    printf(
+            "usage: jbas_mf COMMAND [ARGS]\n"
+            "COMMAND function includes:\n"
+            "   -est     do model inference from scratch and getting model parameters\n"
+            "   -estc    do model inference based on previous training results\n"
+            "   -pred    prediction on test data set\n"
+            "   -debug   loading training and test data simultaneously\n"
+            "\n"
+            "example: ./jbas_mf -est -dt <int> (data set choice) -pretrain (pretraining by bias latent factor model) -debug (loading training and test data)\n"
+        );
 }
