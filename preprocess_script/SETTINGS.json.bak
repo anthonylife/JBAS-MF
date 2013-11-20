@@ -82,6 +82,5 @@
     "test_item_jbasmf_file":"test_item_jbasmf.dat",
     "Intro_test_rating_jbasmf_file": "file for storing the rating test data for method jbasmf",
     "test_rating_jbasmf_file":"test_rating_jbasmf.dat",
-    "train_libmf_path": "train_libmf.dat",
-    "test_libmf_path": "test_libmf.dat"
+    ""
 }

@@ -33,8 +33,8 @@ def format_data_for_jbasmf(in_train_reviewid_path, in_test_reviewid_path,
         itemid,reviewid aspectid modifierid aspectid modifierid ..., ...
     train_rating_jbasmf_file:
         ratingnum
-        userid,itemid,rating
-        userid,itemid,rating
+        userid,itemid,reviewid,rating
+        userid,itemid,reviewid,rating
     test_user_jbasmf_file:
         usernum
         userid,reviewid aspectid aspectid ...,reviewid aspectid aspectid ...
@@ -45,8 +45,8 @@ def format_data_for_jbasmf(in_train_reviewid_path, in_test_reviewid_path,
         itemid,reviewid aspectid modifierid aspectid modifierid ..., ...
     test_rating_jbasmf_file:
         ratingnum
-        userid,itemid,rating
-        userid,itemid,rating
+        userid,itemid,reviewid,rating
+        userid,itemid,reviewid,rating
     '''
     for i in xrange(len(in_train_reviewid_path)):
         print 'Processing the %d data...' % (i+1)
@@ -119,11 +119,13 @@ def get_dict_from_triple(in_path, out_train_path, out_test_path, review_scores,
             if review_id in train_reviews:
                 train_users_reviews[line[0]].append(review_id)
                 train_items_reviews[item_id].append(review_id)
-                train_user_item_rating.append([line[0], item_id, format(float(review_scores[review_id]),'.2f')])
+                train_user_item_rating.append([line[0], item_id, review_id,
+                    format(float(review_scores[review_id]),'.2f')])
             elif review_id in test_reviews:
                 test_users_reviews[line[0]].append(review_id)
                 test_items_reviews[item_id].append(review_id)
-                test_user_item_rating.append([line[0], item_id, format(float(review_scores[review_id]),'.2f')])
+                test_user_item_rating.append([line[0], item_id, review_id,
+                    format(float(review_scores[review_id]),'.2f')])
             else:
                 print 'review id key error.'
                 sys.exit(0)
@@ -135,6 +137,38 @@ def get_dict_from_triple(in_path, out_train_path, out_test_path, review_scores,
     writer.writerows(test_user_item_rating)
     return train_users_reviews, test_users_reviews, train_items_reviews, test_items_reviews
 ################################For JBASMF method#################################
+
+
+################################For LIBMF method#################################
+def format_data_for_libmf(in_train_reviewid_path, in_test_reviewid_path,
+            in_review_score_path, in_user_item_review_path,
+            out_train_libmf_path, out_test_libmf_path):
+    for i in xrange(len(in_train_reviewid_path)):
+        print 'Processing the %d data...' % (i+1)
+        train_reviews = set([review[0] for review in csv.reader(open(in_train_reviewid_path[i]))])
+        test_reviews = set([review[0] for review in csv.reader(open(in_test_reviewid_path[i]))])
+        reviews_scores = dict([line for line in csv.reader(open(in_review_score_path[i]))])
+        output_train_data = []
+        output_test_data = []
+        for line in csv.reader(open(in_user_item_review_path[i])):
+            userid = line[0]
+            reviewids = map(lambda x:x.split(" ")[1], line[1:])
+            itemids = map(lambda x:x.split(" ")[0], line[1:])
+            for j in xrange(len(itemids)):
+                if reviewids[j] in train_reviews:
+                    output_train_data.append([userid, itemids[j], reviews_scores[reviewids[j]]])
+                elif reviewids[j] in test_reviews:
+                    output_test_data.append([userid, itemids[j], reviews_scores[reviewids[j]]])
+                else:
+                    print 'key error of reviews.'
+                    sys.exit(1)
+        writer = csv.writer(open(out_train_libmf_path[i], "w"), delimiter=" ", lineterminator="\n")
+        writer.writerows(output_train_data)
+        writer = csv.writer(open(out_test_libmf_path[i], "w"), delimiter=" ", lineterminator="\n")
+        writer.writerows(output_test_data)
+
+################################For LIBMF method#################################
+
 
 def main():
     print 'Loading file paths...'
@@ -191,6 +225,12 @@ def main():
             paths["test_rating_jbasmf_file"],
             paths["train_test_data_dir2"]+paths["test_rating_jbasmf_file"],
             paths["train_test_data_dir3"]+paths["test_rating_jbasmf_file"]]
+    out_train_libmf_path = [paths["train_test_data_dir1"]+paths["train_libmf_path"],
+            paths["train_test_data_dir2"]+paths["train_libmf_path"],
+            paths["train_test_data_dir3"]+paths["train_libmf_path"]]
+    out_test_libmf_path = [paths["train_test_data_dir1"]+paths["test_libmf_path"],
+            paths["train_test_data_dir2"]+paths["test_libmf_path"],
+            paths["train_test_data_dir3"]+paths["test_libmf_path"]]
 
     format_data_for_jbasmf(in_train_reviewid_path, in_test_reviewid_path,
             in_aspect_dictionary_path, in_sentiment_dictionary_path,
@@ -198,6 +238,9 @@ def main():
             out_train_user_jbasmf_path, out_train_item_jbasmf_path,
             out_train_rating_jbasmf_path, out_test_user_jbasmf_path,
             out_test_item_jbasmf_path, out_test_rating_jbasmf_path)
+    format_data_for_libmf(in_train_reviewid_path, in_test_reviewid_path,
+            in_review_score_path, in_user_item_review_path,
+            out_train_libmf_path, out_test_libmf_path)
 
 if __name__ == "__main__":
     main()
