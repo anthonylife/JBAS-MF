@@ -66,14 +66,21 @@ void Model::set_default_values(){
     pretraining = false;
     
     // ----- Model related file path ----- //
-    model_dir = "./model/";
-    model_psai_file = model_dir + "model_psai.mat";
-    model_phi_file  = model_dir + "model_phi.mat";
-    model_beta_file = model_dir + "model_beta.mat";
-    model_user_pref_file = model_dir + "model_user_pref.mat";
-    model_user_bias_file = model_dir + "model_user_bias.mat";
-    model_item_pref_file = model_dir + "model_item_pref.mat";
-    model_item_bias_file = model_dir + "model_item_bias.mat";
+    model_dir[0] = "./model/cellar/";
+    model_dir[1] = "./model/movie/";
+    model_dir[2] = "./model/food/";
+    model_psai_file = "model_psai.mat";
+    model_phi_file  = "model_phi.mat";
+    model_beta_file = "model_beta.mat";
+    model_user_factor_file = "model_user_pref.mat";
+    model_user_bias_file = "model_user_bias.mat";
+    model_item_factor_file = "model_item_pref.mat";
+    model_item_bias_file = "model_item_bias.mat";
+    model_auassign_file  = "model_auassign.dat";
+    model_aiassign_file  = "model_aiassign.dat";
+    model_ziassign_file  = "model_ziassign.dat";
+    model_modelpara_file = "model_hyperpara.dat";
+    model_regpara_file   = "model_regpara.mat";
 
     // ----- Train and test data path ----- //
     data_dir[0] = "../../data/CellarTracker/train-test/";
@@ -378,6 +385,7 @@ void Model::init_inf(){
             nssum_t[rating_level] += 1;
             na_z_t[ptstdata->reviews[i]->headtermid[j]][aspect_topic_i] += 1;
             ns_r_t[ptstdata->reviews[i]->sentimentid[j]][rating_level] += 1;
+            nd_kr_t[aspect_topic_i][rating_level] += 1;
 #ifdef DUP_USER_TERM
             int aspect_topic_u = (int)(((double)random()/RAND_MAX) * K);
             ptstdata->reviews[i]->z_au[j] = asspect_topic_u;
@@ -406,6 +414,8 @@ void Model::init_inf(){
 }
 
 void Model::estimate(){
+    int tmp_uid, tmp_iid;
+    int sp_aspect, sp_rating;
     printf("Total sampling %d iterations.\n", total_niters);
 
 #ifdef CONT_DEBUG
@@ -418,7 +428,7 @@ void Model::estimate(){
 #endif
     
     for (int i=0; i<total_iters; i++){
-        printf("Current iteration %d ...\n", i);
+        printf("Current iteration %d ...\r", i);
         
         // ---- learning regression parameters ---- //
         compute_as_rating("train");
@@ -430,7 +440,6 @@ void Model::estimate(){
         compute_as_rating("train");
         for (int ii=0; ii<niters_gibbs; i++){
             for (int j=0; j<ptrndata->nR; j++){
-                int tmp_uid, tmp_iid;
                 tmp_uid = ptrndata->reviews[j]->userid;
                 tmp_iid = ptrndata->reviews[j]->itemid;
                 
@@ -440,9 +449,9 @@ void Model::estimate(){
                     if (tmp_reviewidx == j)
                         continue;
                     for (int m=0; m<ptrndata->reviews[tmp_reviewidx]->length; m++){
-                        int sp_aspect = esti_aspect_sampling(j, tmp_reviewidx, m);
+                        sp_aspect = esti_aspect_sampling(j, tmp_reviewidx, m);
                         ptrndata->reviews[tmp_reviewidx]->z_ai[m] = sp_aspect;
-                        int sp_rating = esti_rating_sampling(j, tmp_reviewidx, m, tmp_iid);
+                        sp_rating = esti_rating_sampling(j, tmp_reviewidx, m, tmp_iid);
                         ptrndata->reviews[tmp_reviewidx]->r_s[m] = sp_rating;
                     }
                 }
@@ -453,7 +462,7 @@ void Model::estimate(){
                     if (tmp_reviewidx == j)
                         continue;
                     for (int m=0; m<ptrndata->reviews[tmp_reviewidx]->length; m++){
-                        int sp_aspect = estu_aspect_sampling(j, tmp_reviewidx, m, tmp_uid);
+                        sp_aspect = estu_aspect_sampling(j, tmp_reviewidx, m, tmp_uid);
                         ptrndata->reviews[tmp_reviewidx]->z_au[m] = sp_aspect;
                     }
                 }
@@ -466,13 +475,46 @@ void Model::estimate(){
         compute_mf_rating("train");
         sgd_bias_mf();
     }
-    
+
+#ifdef CONT_DEBUG
+    prediction("train", EVAL_RMSE);
+    compute_user_aspect();
+    compute_item_polarity();
+    prediction("test", EVAL_RMSE);
+#endif
+        
     printf("Iterative Gibbs Sampling and SGD algorithm is finished.\n");
     printf("Saving the final model.");
     save_model();
     if (model_status == MODEL_STATUS_DEBUG){
+        inference();
+        prediction("test", EVAL_RMSE);
         save_rating("test");
     }
+}
+
+void inference(){
+    int sp_aspect, sp_rating;
+    
+    printf("Sampling %d iterations for inference on testdata.\n", niters_t);
+    for (int ii=0; ii<niter_t; ii++){
+        printf("Current iteration %d ...\r", i);
+        
+        for (int i=0; i<ptstdata->nR; i++){
+            for (int j=0; j<ptstdata->reviews[i]->length; j++){
+                sp_aspect = inf_aspect_sampling(i, j);
+                ptstdata->reviews[i]->z_ai[j] = sp_aspect;
+                sp_rating = inf_rating_sampling(i, j);
+                ptstdata->reviews[i]->r_s[j] = sp_rating;
+            }
+        }
+    }
+    printf("Gibbs sampling for inference completed.\n");
+    
+    compute_psai_t();
+    compute_phi_t();
+    compute_beta_t();
+    prediction("test", EVAL_PERPLEXITY);
 }
 
 void Model::compute_as_rating(string dataseg){
@@ -552,8 +594,6 @@ double Model::rating_prediction(int uid, int iid, colvec aspect, colvec polarity
     return as_rating + mf_rating;
 } 
 
-
-
 int Model::esti_aspect_sampling(int set_idx, int review_idx, int term_idx){
     int aspect = ptrndata->reviews[review_idx]->z_ai[term_idx];
     int rating = ptrndata->reviews[review_idx]->r_s[term_idx];
@@ -613,26 +653,31 @@ int Model::esti_rating_sampling(int set_idx, int review_idx, int term_idx, int i
             for (int j=0; j<userid_vec.size(); j++){
                 residual += pow(ptrndata->as_rating(items[itemid]->reviewidx_set[j])-(tmp_polarity%user_pseudo_aspect.row(userid_vec(j)))*lambda, 2)/sigma_reg;
             }
-            if (seed_class==0 or seed_class==1){
-                prob(i) = (nd_kr[aspect][i]+eta0)*(ns_r[termid][i]+eta1)/(nssum[i]+Reta1_ns)*exp(-residual);
-            }else if (seed_class==2) {   
-                prob(i) = (nd_kr[aspect][i]+eta0)*(ns_r[termid][i])/(nssum[i]+Reta1_ns)*exp(-residual);
+            if (seed_class==-1 or seed_class==0){
+                prob(i) = (nd_kr[aspect][i]+eta0)*(ns_r[termid][i]+eta1)
+                    /(nssum[i]+Reta1_ns)*exp(-residual);
+            }else if (seed_class==1) {   
+                prob(i) = (nd_kr[aspect][i]+eta0)*(ns_r[termid][i])
+                    /(nssum[i]+Reta1_ns)*exp(-residual);
             }
             tmp_polarity(aspect) -= (-1.0)/nd_zi[set_idx][aspect];
         }else if (i==1){
             for (int j=0; j<userid_vec.size(); j++){
                 residual += pow(ptrndata->as_rating(items[itemid]->reviewidx_set[j])-(tmp_polarity%user_pseudo_aspect.row(userid_vec(j)))*lambda, 2)/sigma_reg;
             }
-            prob(i) = (nd_kr[aspect][i]+eta0)*(ns_r[termid][i]+eta1)/(nssum[i]+Reta1)*exp(-residual);
+            prob(i) = (nd_kr[aspect][i]+eta0)*(ns_r[termid][i]+eta1)
+                /(nssum[i]+Reta1)*exp(-residual);
         }else if (i==2){
             tmp_polarity(aspect) += (1.0)/nd_zi[set_idx][aspect];
             for (int j=0; j<userid_vec.size(); j++){
                 residual += pow(ptrndata->as_rating(items[itemid]->reviewidx_set[j])-(tmp_polarity%user_pseudo_aspect.row(userid_vec(j)))*lambda, 2)/sigma_reg;
             }
-            if (seed_class==0){
-                prob(i) = (nd_kr[aspect][i]+eta0)*(ns_r[termid][i])/(nssum[i]+Reta1_ps)*exp(-residual);
-            }else if (seed_class==1 or seed_class==2){   
-                prob(i) = (nd_kr[aspect][i]+eta0)*(ns_r[termid][i]+eta1)/(nssum[i]+Reta1_ps)*exp(-residual);
+            if (seed_class==-1){
+                prob(i) = (nd_kr[aspect][i]+eta0)*(ns_r[termid][i])
+                    /(nssum[i]+Reta1_ps)*exp(-residual);
+            }else if (seed_class==0 or seed_class==1){   
+                prob(i) = (nd_kr[aspect][i]+eta0)*(ns_r[termid][i]+eta1)
+                    /(nssum[i]+Reta1_ps)*exp(-residual);
             }
             tmp_polarity(aspect) -= (1.0)/nd_zi[set_idx][aspect];
         }
@@ -702,6 +747,97 @@ int Model::estu_aspect_sampling(int set_idx, int review_idx, int term_idx, int u
     return aspect;
 }
 
+int Model::inf_aspect_sampling(int review_idx, int term_idx){
+    int aspect = ptstdata->reviews[review_idx]->z_ai[term_idx];
+    int rating = ptstdata->reviews[review_idx]->r_s[term_idx];
+    int termid = ptstdata->reviews[review_idx]->headtermid[term_idx];
+    nd_zi_t[review_idx][aspect] -= 1;
+    nd_kr_t[aspect][rating] -= 1;
+    na_z_t[termid][aspect] -= 1;
+    nasum_i_t[aspect] -= 1;
+
+    double Reta0 = RL*eta0;
+    double Veta2 = V_a*eta2;
+    vec prob = zeros<vec>(K);
+    // do multinomial sampling via cumulative method
+    for (int i=0; i<K; i++){
+        prob(i) = (nd_zi_t[review_idx][i]+alpha)
+        *(nd_kr[i][rating]+nd_kr_t[i][rating]+eta0)/(nasum_i[i]+nasum_i_t[i]+Reta0)
+        *(na_z[termid][i]+na_z_t[termid][i]+eta2)/(nasum_i[i]+nasum_i_t[i]+Veta2);
+    }
+    prob = cumsum(prob);
+    double samp_prob = ((double)random()/RAND_MAX)*prob(K-1);
+    for (aspect=0; aspect<K; aspect++){
+        if (samp_prob>prob)
+            break;
+    }
+
+    nd_zi_t[review_idx][aspect] += 1;
+    nd_kr_t[aspect][rating] += 1;
+    na_z_t[termid][aspect] += 1;
+    nasum_i_t[aspect] += 1;
+
+    return aspect;
+}
+
+int Model::inf_rating_sampling(int review_idx, int term_idx){
+    int rating = ptstdata->reviews[review_idx]->r_s[term_idx]
+    int aspect = ptstdata->reviews[review_idx]->z_ai[term_idx];
+    int termid = ptstdata->reviews[review_idx]->sentimentid[term_idx];
+    nd_kr_t[aspect][rating] -= 1;
+    ns_r_t[termid][rating] -= 1;
+    nd_rk_t[set_idx][aspect] -= rating-1;
+    nssum_t[rating] -= 1;
+
+    double tmp_eta0;
+    double Reta1 = V_s*eta1;
+    double Reta1_ps = Reta1 - ptstdata->nneg_seed*eta1;
+    double Reta1_ns = Reta1 - ptstdata->npos_seed*eta1;
+    int seed_class = ptstdata->is_seed(term_idx);
+    vec prob = zeros<vec>(RL);
+    // do multinomial sampling via cumulative method
+    for (int i=0; i<RL; i++){
+        if (i==0){
+            if (seed_class==0 or seed_class==1){
+                prob(i) = (nd_kr[aspect][i]+nd_kr_t[aspect][i]+eta0)
+                    *(ns_r[termid][i]+ns_r_t[termid][i]+eta1)
+                    /(nssum[i]+nssum_t[i]+Reta1_ns);
+            }else if (seed_class==2) {   
+                prob(i) = (nd_kr[aspect][i]+nd_kr[aspect][i]+eta0)
+                    *(ns_r[termid][i]+ns_r_t[termid][i])
+                    /(nssum[i]+nssum_t[i]+Reta1_ns);
+            }
+        }else if (i==1){
+            prob(i) = (nd_kr[aspect][i]+nd_kr_t[aspect][i]+eta0)
+                *(ns_r[termid][i]+ns_r_t[termid][i]+eta1)
+                /(nssum[i]+nssum_t[i]+Reta1);
+        }else if (i==2){
+            if (seed_class==0){
+                prob(i) = (nd_kr[aspect][i]+nd_kr[aspect][i]+eta0)
+                    *(ns_r[termid][i]+ns_r_t[termid][i])
+                    /(nssum[i]+nssum_t[i]+Reta1_ps);
+            }else if (seed_class==1 or seed_class==2){   
+                prob(i) = (nd_kr[aspect][i]+nd_kr_t[aspect][i]+eta0)
+                    *(ns_r[termid][i]+ns_r_t[termid][i]+eta1)
+                    /(nssum[i]+nssum_t[i]+Reta1_ps);
+            }
+        }
+    }
+    prob = cumsum(prob);
+    double samp_prob = ((double)random()/RAND_MAX)*prob(RL-1);
+    for (rating=0; rating<RL; rating++){
+        if (samp_prob>prob)
+            break;
+    }
+
+    nd_kr_t[aspect][rating] += 1;
+    ns_r_t[termid][rating] += 1;
+    nd_rk_t[set_idx][aspect] += rating-1;
+    nssum_t[rating] += 1;
+    
+    return rating;
+}
+
 void Model::sgd_bias_mf(){
     rowvec user_grad = zeros<rowvec>(ndim);
     rowvec item_grad = zeros<rowvec>(ndim);
@@ -734,13 +870,6 @@ void Model::sgd_bias_mf(){
     }
 }
 
-/*void Model::solve_regpara(){
-#ifdef LBFGS
-
-#else
-
-#endif
-}*/
 
 void Model::compute_user_pseudo_aspect(){
     for (int i = 0; i < ptstdata->nR; i++){
@@ -806,9 +935,27 @@ void Model::compute_psai(){
 }
 
 void Model::compute_phi(){
+    int tmp_seed;
+    double Reta1 = V_s*eta1;
+    double Reta1_ps = Reta1 - ptrndata->nneg_seed*eta1;
+    double Reta1_ns = Reta1 - ptrndata->npos_seed*eta1;
+    
     for (int i=0; i<RL; i++){
         for (int j=0; j<V_s; j++){
-            phi(i, j) = (ns_r[j][i]+eta1)/(nssum[i]+V_s*eta1);
+            tmp_seed = ptrndata->is_seed(j);
+            if (i==0){
+                if (tmp_seed==-1 || tmp_seed==0)
+                    phi(i, j) = (ns_r[j][i]+eta1)/(nssum[i]+Reta1_ns);
+                else if (tmp_seed==1)
+                    phi(i, j) = (ns_r[j][i])/(nssum[i]+Reta1_ns);
+            }else if (i==1){
+                phi(i, j) = (ns_r[j][i]+eta1)/(nssum[i]+Reta1);
+            }else if (i==2){
+                if (tmp_seed==-1)
+                    phi(i, j) = (ns_r[j][i])/(nssum[i]+Reta1_ps);
+                else if (tmp_seed==0 || tmp_seed==1)
+                    phi(i, j) = (ns_r[j][i]+eta1)/(nssum[i]+Reta1_ps);
+            }
         }
     }
 }
@@ -822,15 +969,51 @@ void Model::compute_beta(){
 }
 
 void Model::compute_psai_t(){
-
+    for (int i=0; i<K; i++){
+        for (int j=0; j<RL; j++){
+            psai(i, j) = (nd_kr[i][j]+nd_kr_t[i][j]+eta0)
+                /(nasum_i[i]+nasum_i_t[i]+RL*eta0);
+        }
+    }
 }
 
 void Model::compute_phi_t(){
-
+    double Reta1 = V_s*eta1;
+    double Reta1_ps = Reta1 - ptstdata->nneg_seed*eta1;
+    double Reta1_ns = Reta1 - ptstdata->npos_seed*eta1;
+    
+    for (int i=0; i<RL; i++){
+        for (int j=0; j<V_s; j++){
+            tmp_seed = ptstdata->is_seed(j);
+            if (i==0){
+                if (tmp_seed==-1 || tmp_seed==0)
+                    phi(i, j) = (ns_r[j][i]+ns_r_t[j][i]+eta1)
+                        /(nssum[i]+nssum_t[i]+Reta1_ns);
+                else if (tmp_seed==1)
+                    phi(i, j) = (ns_r[j][i]+ns_r_t[j][i])
+                        /(nssum[i]+nssum_t[i]+Reta1_ns);
+            }else if (i==1){
+                phi(i, j) = (ns_r[j][i]+ns_r_t[j][i]+eta1)
+                    /(nssum[i]+nssum_t[i]+Reta1);
+            }else if (i==2){
+                if (tmp_seed==-1)
+                    phi(i, j) = (ns_r[j][i]+ns_r_t[j][i])
+                        /(nssum[i]+nssum_t[i]+Reta1_ps);
+                else if (tmp_seed==0 || tmp_seed==1)
+                    phi(i, j) = (ns_r[j][i]+ns_r_t[j][i]+eta1)
+                        /(nssum[i]+nssum_t[i]+Reta1_ps);
+            }
+        }
+    }
 }
 
 void Model::compute_beta_t(){
-
+    for (int i=0; i<K; i++){
+        for (int j=0; j<RL; j++){
+            psai(i, j) = (nd_kr[i][j]+nd_kr_t[i][j]+eta0)
+                /(nasum_i[i]+nasum_i_t[i]+RL*eta0);
+        }
+    }
 }
 
 vec Model::get_user_vec(string dataseg, int itemid){
@@ -919,3 +1102,248 @@ double Model::eval_doc_perp(int idx, string dataseg){
         return doc_perp;
     }
 }
+
+void Model::save_model(){
+    if (!save_model_hyperpara()){
+        printf("Error when saving model hyperparameters!\n");
+        exit(1);
+    }else if (!save_model_regpara()){
+        printf("Error when saving model regression paramters!\n");
+        exit(1);
+    }else if (!save_model_spassign()){
+        printf("Error when saving model sampling assignments!\n");
+        exit(1);
+    }else if (!save_model_mf_para()){
+        printf("Error when saving model matrix factorization parameters!\n");
+        exit(1);
+    }else if (!save_model_as_para()){
+        printf("Error when saving model aspect sentiment parameters!\n");
+        exit(1);
+    }
+}
+
+int Model::save_model_hyperpara(){
+    string model_hyperpara_file_path = model_dir[data_type] + model_hyperpara_file;
+
+    FILE * fout = fopen(model_hyperpara_file_path.c_str(), "w");
+    if (!fout){
+        printf("Fail to save file %s!\n", model_hyperpara_file_path.c_str());
+        return RET_ERROR_STATUS;
+    }
+
+    fprintf(fout, "%d\n", nU);
+    fprintf(fout, "%d\n", nI);
+    fprintf(fout, "%d\n", RW);
+    fprintf(fout, "%d\n", V_a);
+    fprintf(fout, "%d\n", V_s);
+    fclose(fout);
+
+    return RET_OK_STATUS;
+}
+
+int Model::save_model_spassign(){
+    int tmp_length;
+    string model_auassign_file_path = model_dir[data_type] + model_auassign_file;
+    string model_aiassign_file_path = model_dir[data_type] + model_aiassign_file;
+    string model_riassign_file_path = model_dir[data_type] + model_riassign_file;
+    
+    FILE * fout_au = fopen(model_auassign_file_path.c_str(), "w");
+    if (!fout_au){
+        printf("Fail to save file %s!\n", model_auassign_file_path.c_str());
+        return RET_ERROR_STATUS;
+    }
+    FILE * fout_ai = fopen(model_aiassign_file_path.c_str(), "w");
+    if (!fout_ai){
+        printf("Fail to save file %s!\n", model_aiassign_file_path.c_str());
+        return RET_ERROR_STATUS;
+    }
+    FILE * fout_ri = fopen(model_riassign_file_path.c_str(), "w");
+    if (!fout_ri){
+        printf("Fail to save file %s!\n", model_riassign_file_path.c_str());
+        return RET_ERROR_STATUS;
+    }
+    for (int i=0; i<ptrndata->nR; i++){
+        tmp_length = ptrndata->reviews[i]->length;
+        for (int j=0; j<tmp_length-1; j++){
+            fprintf(fout_au, "%d:%d ", ptrndata->reviews[i]->headtermid[j],
+                    ptrndata->reviews[i]->z_au[j]);
+            fprintf(fout_ai, "%d:%d ", ptrndata->reviews[i]->headtermid[j],
+                    ptrndata->reviews[i]->z_ai[j]);
+            fprintf(fout_ri, "%d:%d ", ptrndata->reviews[i]->headtermid[j],
+                    ptrndata->reviews[i]->r_s[j]);
+        }
+        fprintf(fout_au, "%d:%d ", ptrndata->reviews[i]->headtermid[tmp_length-1],
+                ptrndata->reviews[i]->z_au[j]);
+        fprintf(fout_ai, "%d:%d ", ptrndata->reviews[i]->headtermid[tmp_length-1],
+                ptrndata->reviews[i]->z_ai[j]);
+        fprintf(fout_ri, "%d:%d ", ptrndata->reviews[i]->headtermid[tmp_length-1],
+                ptrndata->reviews[i]->r_s[j]);
+    }
+    fclose(fout_au);
+    fclose(fout_ai);
+    fclose(fout_ri);
+
+    return RET_OK_STATUS;
+}
+
+int Model::save_model_regpara(){
+    string model_regpara_file_path = model_dir[data_type] + model_regpara_file;
+
+    lambda.save(model_regpara_file_path);
+
+    return RET_OK_STATUS;
+}
+
+int Model::save_model_mf_para(){
+    string model_psai_file_path = model_dir[data_type] + model_psai_file;     
+    string model_phi_file_path = model_dir[data_type] + model_phi_file; 
+    string model_beta_file_path = model_dir[data_type] + model_beta_file; 
+
+    psai.save(model_psai_file_path);
+    phi.save(model_phi_file_path);
+    beta.save(model_beta_file_path);
+        
+    return RET_OK_STATUS;
+}
+
+int Model::save_model_as_para(){
+    string user_factor_file_path = model_dir[data_type] + model_user_factor_file;
+    string user_bias_file_path = model_dir[data_type] + model_user_bias_file;
+    string item_factor_file_path = model_dir[data_type] + model_item_factor_file;
+    string item_bias_file_path = model_dir[data_type] + model_item_bias_file;
+
+    user_factor.save(user_factor_file_path);
+    user_bias.save(user_bias_file_path);
+    item_factor.save(item_factor_file_path);
+    item_bias.save(item_bias_file_path);
+
+    return RET_OK_STATUS;
+}
+
+void Model::load_model(){
+    if (!load_model_hyperpara()){
+        printf("Error when saving model hyperparameters!\n");
+        exit(1);
+    }else if (!load_model_regpara()){
+        printf("Error when saving model regression paramters!\n");
+        exit(1);
+    }else if (!load_model_spassign()){
+        printf("Error when saving model sampling assignments!\n");
+        exit(1);
+    }else if (!load_model_mf_para()){
+        printf("Error when saving model matrix factorization parameters!\n");
+        exit(1);
+    }else if (!load_model_as_para()){
+        printf("Error when saving model aspect sentiment parameters!\n");
+        exit(1);
+    }
+}
+
+int Model::load_model_hyperpara(){
+    string model_hyperpara_file_path = model_dir[data_type] + model_hyperpara_file;
+
+    FILE * fin = fopen(model_hyperpara_file_path.c_str(), "r");
+    if (!fout){
+        printf("Fail to load file %s!\n", model_hyperpara_file_path.c_str());
+        return RET_ERROR_STATUS;
+    }
+
+    // avoid repeated loading info as the following vars already setted
+    // when loading data
+    /*fscanf(fin, "%d\n", &nU);
+    fscanf(fin, "%d\n", &nI);
+    fscanf(fin, "%d\n", &RW);
+    fscanf(fin, "%d\n", &V_a);
+    fscanf(fin, "%d\n", &V_s);*/
+    fclose(fin);
+
+    return RET_OK_STATUS;
+}
+
+int Model::load_model_regpara(){
+    string model_regpara_file_path = model_dir[data_type] + model_regpara_file;
+
+    lambda.load(model_regpara_file_path);
+
+    return RET_OK_STATUS;
+}
+
+int Model::load_model_spassign(){
+    int tmp_length;
+    string model_auassign_file_path = model_dir[data_type] + model_auassign_file;
+    string model_aiassign_file_path = model_dir[data_type] + model_aiassign_file;
+    string model_riassign_file_path = model_dir[data_type] + model_riassign_file;
+    
+    FILE * fin_au = fopen(model_auassign_file_path.c_str(), "r");
+    if (!fin_au){
+        printf("Fail to load file %s!\n", model_auassign_file_path.c_str());
+        return RET_ERROR_STATUS;
+    }
+    FILE * fin_ai = fopen(model_aiassign_file_path.c_str(), "r");
+    if (!fin_ai){
+        printf("Fail to load file %s!\n", model_aiassign_file_path.c_str());
+        return RET_ERROR_STATUS;
+    }
+    FILE * fin_ri = fopen(model_riassign_file_path.c_str(), "r");
+    if (!fin_ri){
+        printf("Fail to load file %s!\n", model_riassign_file_path.c_str());
+        return RET_ERROR_STATUS;
+    }
+    for (int i=0; i<ptrndata->nR; i++){
+        tmp_length = ptrndata->reviews[i]->length;
+        for (int j=0; j<tmp_length-1; j++){
+            fscanf(fin_au, "%d:%d", &ptrndata->reviews[i]->headtermid[j],
+                    &ptrndata->reviews[i]->z_au[j]);
+            fscanf(fin_ai, "%d:%d", &ptrndata->reviews[i]->headtermid[j],
+                    &ptrndata->reviews[i]->z_ai[j]);
+            fscanf(fin_ri, "%d:%d", &ptrndata->reviews[i]->headtermid[j],
+                    &ptrndata->reviews[i]->r_s[j]);
+        }
+        fscanf(fin_au, "%d:%d\n", &ptrndata->reviews[i]->headtermid[tmp_length-1],
+                &ptrndata->reviews[i]->z_au[j]);
+        fscanf(fin_ai, "%d:%d\n", &ptrndata->reviews[i]->headtermid[tmp_length-1],
+                &ptrndata->reviews[i]->z_ai[j]);
+        fscanf(fin_ri, "%d:%d\n", &ptrndata->reviews[i]->headtermid[tmp_length-1],
+                &ptrndata->reviews[i]->r_s[j]);
+    }
+    fclose(fin_au);
+    fclose(fin_ai);
+    fclose(fin_ri);
+
+    return RET_OK_STATUS;
+}
+
+int Model::load_model_mf_para(){
+    string model_psai_file_path = model_dir[data_type] + model_psai_file;     
+    string model_phi_file_path = model_dir[data_type] + model_phi_file; 
+    string model_beta_file_path = model_dir[data_type] + model_beta_file; 
+
+    psai.load(model_psai_file_path);
+    phi.load(model_phi_file_path);
+    beta.load(model_beta_file_path);
+        
+    return RET_OK_STATUS;
+}
+
+int Model::save_model_as_para(){
+    string user_factor_file_path = model_dir[data_type] + model_user_factor_file;
+    string user_bias_file_path = model_dir[data_type] + model_user_bias_file;
+    string item_factor_file_path = model_dir[data_type] + model_item_factor_file;
+    string item_bias_file_path = model_dir[data_type] + model_item_bias_file;
+
+    user_factor.load(user_factor_file_path);
+    user_bias.load(user_bias_file_path);
+    item_factor.load(item_factor_file_path);
+    item_bias.load(item_bias_file_path);
+
+    return RET_OK_STATUS;
+}
+
+/*void Model::solve_regpara(){
+#ifdef LBFGS
+
+#else
+
+#endif
+}*/
+

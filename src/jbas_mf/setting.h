@@ -22,6 +22,7 @@
 // ----- Constant variables ----- //
 #define BUFF_SIZE_LONG 1000000
 #define NUM_ATTR_OF_REVIEW_FILE 4
+#define DATA_NUM 3
 
 // status of function return results
 #define RET_OK_STATUS 0

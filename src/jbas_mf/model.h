@@ -91,7 +91,6 @@ class Model{
         int * nasum_i_t;
         int * nssum_t;
 
-        
         dataset * ptrndata;     // pointer to training dataset instance
         dataset * ptstdata;     // pointer to test dataset instance
         UserItem * users;       // user instance array
@@ -110,18 +109,23 @@ class Model{
         //int eval_method;        // choice of evaluation method
         
         // ----- Model related file path ----- //
-        string model_dir;           // directory of model files
+        string model_dir[DATA_NUM];     // directory of model files
         string model_psai_file;     
         string model_phi_file; 
         string model_beta_file; 
         //string model_suffix;
-        string model_user_pref_file;
+        string model_user_factor_file;
         string model_user_bias_file;
-        string model_item_pref_file;
+        string model_item_factor_file;
         string model_item_bias_file;
+        string model_auassign_file;
+        string model_aiassign_file;
+        string model_riassign_file;
+        string model_hyperpara_file;
+        string model_regpara_file;
 
         // ----- Train and test data path ----- //
-        string data_dir;
+        string data_dir[DATA_NUM];
         string train_user_file;
         string train_item_file;
         string train_rating_file;
@@ -154,12 +158,17 @@ class Model{
         void prediction();              // prediction ont test data set
         //void solve_regpara();           // solving the regression parameters
         
-        int esti_aspect_sampling(int set_idx, int review_idx, int term_idx);// sampling aspect topic for item in est 
-        int esti_rating_sampling(int set_idx, int review_idx, int term_idx, int itemid);    // sampling rating level in estimation
-        int estu_aspect_sampling(int set_idx, int review_idx, int term_idx, int userid);    // sampling aspect topic for user in est
+        // sampling aspect topic for item in est 
+        int esti_aspect_sampling(int set_idx, int review_idx, int term_idx);
+        // sampling rating level in estimation
+        int esti_rating_sampling(int set_idx, int review_idx, int term_idx, int itemid);
+        // sampling aspect topic for user in est
+        int estu_aspect_sampling(int set_idx, int review_idx, int term_idx, int userid);
         int infi_aspect_sampling();     // sampling aspect topic for item in inf
         int infi_rating_sampling();     // sampling rating level in inference
         int infu_aspect_sampling();     // sampling aspect topic for user in inf
+        int inf_aspect_sampling(int review_idx, int term_idx);
+        int inf_rating_sampling(int review_idx, int term_idx);
         void sgd_bias_mf();             // SGD for bias matrix factorization
 
         void compute_mf_rating(string dataseg);
@@ -184,7 +193,17 @@ class Model{
         double eval_doc_perp(int reviewidx, string dataseg);
         
         void save_model();              // save model to files
+        int save_model_spassign();
+        int save_model_regpara();         //
+        int save_model_hyperpara();       //
+        int save_model_mf_para();
+        int save_model_as_para();
         void load_model();              // loading model from files
+        int save_model_spassign();
+        int save_model_regpara();         //
+        int save_model_hyperpara();       //
+        int save_model_mf_para();
+        int save_model_as_para();
         void save_rating();             // save test rating values
 };
 
