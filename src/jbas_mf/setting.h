@@ -18,11 +18,20 @@
 #include <armadillo>
 #include <cmath>
 #include <tr1/unordered_map>
+#include <tr1/unordered_set>
+
+using namespace std;
+using namespace arma;
 
 // ----- Constant variables ----- //
 #define BUFF_SIZE_LONG 1000000
 #define NUM_ATTR_OF_REVIEW_FILE 4
 #define DATA_NUM 3
+
+const string TRAIN_DATA = "train";
+const string TEST_DATA = "test";
+const string REVIEW_SET_FORM = "set";
+const string REVIEW_SINGLE_FORM = "single";
 
 // status of function return results
 #define RET_OK_STATUS 0

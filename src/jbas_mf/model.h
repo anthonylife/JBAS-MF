@@ -11,9 +11,6 @@
 #include "setting.h"
 #include "dataset.h"
 
-using namespace std;
-using namespace arma;
-
 class Model{
     public:
         // ----- model hyper-parameters ----- //
@@ -91,14 +88,14 @@ class Model{
         int * nasum_i_t;
         int * nssum_t;
 
-        dataset * ptrndata;     // pointer to training dataset instance
-        dataset * ptstdata;     // pointer to test dataset instance
-        UserItem * users;       // user instance array
-        UserItem * items;       // item instance array
+        Dataset * ptrndata;     // pointer to training dataset instance
+        Dataset * ptstdata;     // pointer to test dataset instance
+        UserItem ** users;       // user instance array
+        UserItem ** items;       // item instance array
         
-        int total_iters;        // total number of outer iteration
+        int total_niters;        // total number of outer iteration
         int niters_gibbs;       // number of gibbs iteration
-        int niters_mf
+        int niters_mf;          // iteration for matrix factorization 
         int niters_t;           // iteration needed in inference time
         int nburn;              // number of burn-in iteration
         int saved_step;         // iteration step of collecting samples
@@ -142,20 +139,21 @@ class Model{
         string item_bias_file;
 
         // ----- model related functions ----- //
-        void parse_args(int argc, char ** argv);    // command line 
+        int parse_args(int argc, char ** argv);    // command line 
         void set_default_values();                  // set default values 
         
         int init_model(int argc, char ** argv);     // intialize model parameters
         int init_est();         // intialization from scratch
         void init_estc();       // intialization based on previous training result
-        void init_inf();       // for prediction on test data
+        void init_inf();        // for prediction on test data
         void rinit_factor();            // random initialize fo user/item factor
-        void init_topic_rating();      // initialize topic rating feature to "1"
-        int load_pretr();               // load pretraining results
+        void init_topic_rating();       // initialize topic rating feature to "1"
+        void load_pretr();              // load pretraining results
         
         void estimate();                // estimating model parameters
         void inference();               // inference topic dis on new reviews
-        void prediction();              // prediction ont test data set
+        // prediction ont test data set
+        void prediction(const string dataseg, int eval_method);
         //void solve_regpara();           // solving the regression parameters
         
         // sampling aspect topic for item in est 
@@ -171,8 +169,8 @@ class Model{
         int inf_rating_sampling(int review_idx, int term_idx);
         void sgd_bias_mf();             // SGD for bias matrix factorization
 
-        void compute_mf_rating(string dataseg);
-        void compute_as_rating(string dataseg);
+        void compute_mf_rating(const string dataseg);
+        void compute_as_rating(const string dataseg);
         void compute_user_pseudo_aspect();
         void compute_item_pseudo_polarity();
         void compute_user_aspect();
@@ -189,21 +187,21 @@ class Model{
 
         double rating_prediction(int uid, int iid);  // predicting rating value
         double eval_rmse(colvec real_rating, colvec pred_rating);
-        double eval_corp_perp(string dataseg, string review_form);
-        double eval_doc_perp(int reviewidx, string dataseg);
+        double eval_corp_perp(const string dataseg, const string review_form);
+        double eval_doc_perp(int reviewidx, const string dataseg);
         
         void save_model();              // save model to files
         int save_model_spassign();
-        int save_model_regpara();         //
-        int save_model_hyperpara();       //
+        int save_model_regpara(); 
+        int save_model_hyperpara();
         int save_model_mf_para();
         int save_model_as_para();
         void load_model();              // loading model from files
-        int save_model_spassign();
-        int save_model_regpara();         //
-        int save_model_hyperpara();       //
-        int save_model_mf_para();
-        int save_model_as_para();
+        int load_model_spassign();
+        int load_model_regpara(); 
+        int load_model_hyperpara();
+        int load_model_mf_para();
+        int load_model_as_para();
         void save_rating();             // save test rating values
 };
 

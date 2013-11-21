@@ -18,7 +18,7 @@ void Model::set_default_values(){
     sigma_bias= 1;
 
     // ----- Regression parameters ----- //
-    lambda = eye<colvec>(K+1);    // last element for intercept 1
+    lambda = ones<colvec>(K+1);    // last element for intercept 1
     sigma_reg = 1;
     sigma_reg_prior = 0.1;
 
@@ -36,7 +36,7 @@ void Model::set_default_values(){
     nasum_u  = NULL;
     nasum_i  = NULL;
     nssum    = NULL;
-    total_iters  = 10;
+    total_niters  = 10;
     niters_gibbs = 1000;
     niters_mf = 100;
     nburn = 500;
@@ -44,8 +44,8 @@ void Model::set_default_values(){
 
     ptstdata = NULL;
     RW_t  = 0;
-    V_a_t = 0;
-    V_s_t = 0;
+    //V_a_t = 0;
+    //V_s_t = 0;
     nd_zi_t = NULL;
     //nd_ri_t = NULL;
     nd_kr_t = NULL;
@@ -78,8 +78,8 @@ void Model::set_default_values(){
     model_item_bias_file = "model_item_bias.mat";
     model_auassign_file  = "model_auassign.dat";
     model_aiassign_file  = "model_aiassign.dat";
-    model_ziassign_file  = "model_ziassign.dat";
-    model_modelpara_file = "model_hyperpara.dat";
+    model_riassign_file  = "model_riassign.dat";
+    model_hyperpara_file = "model_hyperpara.dat";
     model_regpara_file   = "model_regpara.mat";
 
     // ----- Train and test data path ----- //
@@ -102,7 +102,7 @@ void Model::set_default_values(){
     item_bias_file = "libmf_item_bias_dat";
 }
 
-int parse_args(int argc, char ** argv){
+int Model::parse_args(int argc, char ** argv){
     int i = 0;
 
     set_default_values();
@@ -114,7 +114,7 @@ int parse_args(int argc, char ** argv){
         }else if (arg == "-estc"){
             model_status = MODEL_STATUS_ESTC;
         }else if (arg == "-pred"){
-            model_status = MODEL_STATUS_PRED;
+            model_status = MODEL_STATUS_INF;
         }else if (arg == "-debug"){
             model_status = MODEL_STATUS_DEBUG;
         }else if (arg == "-dt"){
@@ -122,7 +122,7 @@ int parse_args(int argc, char ** argv){
         }else if (arg == "-pretraining"){
             pretraining = true;
         }else{
-            printf("Invalid command parameters.\n")
+            printf("Invalid command parameters.\n");
             return RET_ERROR_STATUS;
         }
         i++;
@@ -132,7 +132,9 @@ int parse_args(int argc, char ** argv){
 }
 
 int Model::init_model(int argc, char ** argv){
-    string user_file, item_file, rating_file, aspect_file, sentiment_file;
+    string user_file_path, item_file_path, rating_file_path,
+           aspect_file_path, sentiment_file_path, seed_pos_file_path,
+           seed_neg_file_path;
 
     if (parse_args(argc, argv)){
         return RET_ERROR_STATUS;
@@ -145,18 +147,14 @@ int Model::init_model(int argc, char ** argv){
     sentiment_file_path = data_dir[data_type] + sentiment_dict;
     seed_pos_file_path = data_dir[data_type] + seed_pos_file;
     seed_neg_file_path = data_dir[data_type] + seed_neg_file;
-    if (model_status == MODEL_STATUS_EST){
-        user_file_path = data_dir[data_type] + train_user_file;
-        item_file_path = data_dir[data_type] + train_item_file;
-        rating_file = data_dir[data_type] + train_rating_file;
-    }else if (model_status == MODEL_STATUS_PRED){
-        user_file_path = data_dir[data_type] + test_user_file;
-        item_file_path = data_dir[data_type] + test_item_file;
-        rating_file_path = data_dir[data_type] + test_rating_file;
-    }else if (model_status == MODEL_STATUS_DEBUG){
+    if (model_status == MODEL_STATUS_EST || model_status == MODEL_STATUS_DEBUG){
         user_file_path = data_dir[data_type] + train_user_file;
         item_file_path = data_dir[data_type] + train_item_file;
         rating_file_path = data_dir[data_type] + train_rating_file;
+    }else if (model_status == MODEL_STATUS_INF){
+        user_file_path = data_dir[data_type] + test_user_file;
+        item_file_path = data_dir[data_type] + test_item_file;
+        rating_file_path = data_dir[data_type] + test_rating_file;
     }else if (model_status == MODEL_STATUS_ESTC){
         printf("Currently unavalible.\n");
         exit(1);
@@ -165,30 +163,33 @@ int Model::init_model(int argc, char ** argv){
     // read data
     if (model_status == MODEL_STATUS_EST || model_status == MODEL_STATUS_DEBUG){
         ptrndata = new Dataset();
-        ptrndata->read_data(user_file_path, item_file_path, rating_file_path, this);
-        ptrndata->get_nterm(aspect_file_path, sentiment_file_path, this->V_a, this->V_s);
+        ptrndata->read_data(user_file_path, item_file_path, rating_file_path,
+                this->nU, this->nI, this->users, this->items);
+        ptrndata->get_nterm(aspect_file_path, sentiment_file_path,
+                this->V_a, this->V_s);
         ptrndata->read_seed_words(seed_pos_file_path, seed_neg_file_path);
         RW = ptrndata->nR;
         psai = zeros<mat>(K, RL);
         phi  = zeros<mat>(RL, V_s);
         beta = zeros<mat>(K, V_a);
-    }else if (model_status == MODEL_STATUS_PRED){
+    }else if (model_status == MODEL_STATUS_INF){
         ptstdata = new Dataset();
-        ptstndata->read_data(user_file, item_file, rating_file);
-        ptstndata->get_nterm(aspect_file, sentiment_file, this->V_a, this->V_s);
-        ptstndata->read_seed_words(seed_pos_file_path, seed_neg_file_path);
+        ptstdata->read_data(user_file_path, item_file_path, rating_file_path);
+        ptstdata->get_nterm(aspect_file_path, sentiment_file_path,
+                this->V_a, this->V_s);
+        ptstdata->read_seed_words(seed_pos_file_path, seed_neg_file_path);
         RW_t = ptstdata->nR;
         psai_t = zeros<mat>(K, RL);
         phi_t  = zeros<mat>(RL, V_s);
         beta_t = zeros<mat>(K, V_a);
     }
     if (model_status == MODEL_STATUS_DEBUG){
-        user_file = data_dir[data_type] + test_user_file;
-        item_file = data_dir[data_type] + test_item_file;
-        rating_file = data_dir[data_type] + test_rating_file;
+        user_file_path = data_dir[data_type] + test_user_file;
+        item_file_path = data_dir[data_type] + test_item_file;
+        rating_file_path = data_dir[data_type] + test_rating_file;
         ptstdata = new Dataset();
-        ptstndata->read_data(user_file, item_file, rating_file);
-        ptstndata->read_seed_words(seed_pos_file_path, seed_neg_file_path);
+        ptstdata->read_data(user_file_path, item_file_path, rating_file_path);
+        ptstdata->read_seed_words(seed_pos_file_path, seed_neg_file_path);
         RW_t = ptstdata->nR;
         psai_t = zeros<mat>(K, RL);
         phi_t  = zeros<mat>(RL, V_s);
@@ -230,11 +231,11 @@ int Model::init_est(){
     // random aspect topic, rating assignments for each review
     srandom(time(0));
     for (int i=0; i<RW; i++){
-        int len_rw = ptrndata->reviews[i].length;
+        int len_rw = ptrndata->reviews[i]->length;
         for (int j=0; j<len_rw; j++){
             int aspect_topic_i = (int)(((double)random()/RAND_MAX) * K);
             int rating_level = (int)(((double)random()/RAND_MAX) * RL);
-            ptrndata->reviews[i]->z_ai[j] = asspect_topic_i;
+            ptrndata->reviews[i]->z_ai[j] = aspect_topic_i;
             nasum_i[aspect_topic_i] += 1;
             nssum[rating_level] += 1;
             na_z[ptrndata->reviews[i]->headtermid[j]][aspect_topic_i] += 1;
@@ -242,7 +243,7 @@ int Model::init_est(){
             nd_kr[aspect_topic_i][rating_level] += 1;
 #ifdef DUP_USER_TERM
             int aspect_topic_u = (int)(((double)random()/RAND_MAX) * K);
-            ptrndata->reviews[i]->z_au[j] = asspect_topic_u;
+            ptrndata->reviews[i]->z_au[j] = aspect_topic_u;
             nasum_u[aspect_topic_u] += 1;            
             na_z[ptrndata->reviews[i]->headtermid[j]][aspect_topic_u] += 1;
 #else
@@ -266,20 +267,20 @@ int Model::init_est(){
 
     // collection results of review initialization and random assignment for user
     int reviewidx;
-    for (int i=0; i<ptrndata->nU; i++){
+    for (int i=0; i<nU; i++){
         int * tmp_z_u = utils::alloc_vector(K);
         int tmp_ndsum = 0;
         
-        for (int j=0; j<ptrndata->users[i]->nreview; j++){
-            reviewidx = ptrndata->users[i]->reviewidx_set[j];
+        for (int j=0; j<users[i]->nreview; j++){
+            reviewidx = users[i]->reviewidx_set[j];
             tmp_ndsum += ptrndata->reviews[reviewidx]->length;
             for (int k=0; k<ptrndata->reviews[reviewidx]->length; k++){
                 tmp_z_u[ptrndata->reviews[reviewidx]->z_au[k]] += 1;
             }
         }
         
-        for (int j=0; j<ptrndata->users[i]->nreview; j++){
-            reviewidx = ptrndata->users[i]->reviewidx_set[j];
+        for (int j=0; j<users[i]->nreview; j++){
+            reviewidx = users[i]->reviewidx_set[j];
             ndsum[reviewidx] = tmp_ndsum - ptrndata->reviews[reviewidx]->length;
             memcpy(nd_zu[reviewidx], tmp_z_u, K*sizeof(int));
             for (int k=0; k<ptrndata->reviews[reviewidx]->length; k++){
@@ -289,14 +290,13 @@ int Model::init_est(){
     }
 
     // collection results of review initialization and random assignment for item
-    int reviewidx;
-    for (int i=0; i<ptrndata->nI; i++){
+    for (int i=0; i<nI; i++){
         int *tmp_z_i = utils::alloc_vector(K);
         //int *tmp_r_i = utils::alloc_vector(RL);
         int *tmp_rk_i = utils::alloc_vector(K);
 
-        for (int j=0; j<ptrndata->items[i]->nreview; j++){
-            reviewidx = ptrndata->items[i]->reviewidx_set[j];
+        for (int j=0; j<items[i]->nreview; j++){
+            reviewidx = items[i]->reviewidx_set[j];
             for (int k=0; k<ptrndata->reviews[reviewidx]->length; k++){
                 tmp_z_i[ptrndata->reviews[reviewidx]->z_ai[k]] += 1;
                 //tmp_r_i[ptrndata->reviews[reviewidx]->r_s[k]] += 1;
@@ -304,12 +304,12 @@ int Model::init_est(){
             }
         }
         
-        for (int j=0; j<ptrndata->items[i]->nreview; j++){
-            reviewidx = ptrndata->items[i]->reviewidx_set[j];
+        for (int j=0; j<items[i]->nreview; j++){
+            reviewidx = items[i]->reviewidx_set[j];
             memcpy(nd_zi[reviewidx], tmp_z_i, K*sizeof(int));
             //memcpy(nd_ri[reviewidx], tmp_r_i, RL*sizeof(int));
             memcpy(nd_rk[reviewidx], tmp_rk_i, RL*sizeof(int));
-            for (int k=0; <ptrndata->reviews[reviewidx]->length; k++){
+            for (int k=0; k<ptrndata->reviews[reviewidx]->length; k++){
                 nd_zi[reviewidx][ptrndata->reviews[reviewidx]->z_ai[k]] -= 1;
                 //nd_ri[reviewidx][ptrndata->reviews[reviewidx]->r_s[k]] -= 1;
                 nd_rk[reviewidx][ptrndata->reviews[reviewidx]->z_ai[k]] -= ptrndata->reviews[reviewidx]->r_s[k]-1;
@@ -322,7 +322,7 @@ int Model::init_est(){
         rinit_factor();
     else
         load_pretr();
-    rinit_topic_rating();
+    init_topic_rating();
 
     return RET_OK_STATUS;
 }
@@ -336,13 +336,13 @@ void Model::init_topic_rating(){
 
 void Model::rinit_factor(){
     srandom(time(0));
-    user_factor = 0.1*randn<mat>(nU+1, ndim_factor);
+    user_factor = 0.1*randn<mat>(nU+1, ndim);
     user_bias = 0.1*randn<colvec>(nU+1);
-    item_factor = 0.1*randn<mat>(nI+1, ndim_factor);
+    item_factor = 0.1*randn<mat>(nI+1, ndim);
     item_bias = 0.1*randn<colvec>(nI+1);
 }
 
-int Model::load_pretr(){
+void Model::load_pretr(){
     string user_factor_file_path, user_bias_file_path;
     string item_factor_file_path, item_bias_file_path; 
 
@@ -358,7 +358,7 @@ int Model::load_pretr(){
 }
 
 void Model::init_inf(){
-    if (model_status == MODEL_STATUS_inf)
+    if (model_status == MODEL_STATUS_INF)
         load_model();
     
     // allocation for estimation variables
@@ -376,11 +376,11 @@ void Model::init_inf(){
     // random aspect topic, rating assignments for each review
     srandom(time(0));
     for (int i=0; i<RW_t; i++){
-        int len_rw = ptstdata->reviews[i].length;
+        int len_rw = ptstdata->reviews[i]->length;
         for (int j=0; j<len_rw; j++){
             int aspect_topic_i = (int)(((double)random()/RAND_MAX) * K);
             int rating_level = (int)(((double)random()/RAND_MAX) * RL);
-            ptstdata->reviews[i]->z_ai[j] = asspect_topic_i;
+            ptstdata->reviews[i]->z_ai[j] = aspect_topic_i;
             nasum_i_t[aspect_topic_i] += 1;
             nssum_t[rating_level] += 1;
             na_z_t[ptstdata->reviews[i]->headtermid[j]][aspect_topic_i] += 1;
@@ -388,7 +388,7 @@ void Model::init_inf(){
             nd_kr_t[aspect_topic_i][rating_level] += 1;
 #ifdef DUP_USER_TERM
             int aspect_topic_u = (int)(((double)random()/RAND_MAX) * K);
-            ptstdata->reviews[i]->z_au[j] = asspect_topic_u;
+            ptstdata->reviews[i]->z_au[j] = aspect_topic_u;
             nasum_u_t[aspect_topic_u] += 1;            
             na_z_t[ptstdata->reviews[i]->headtermid[j]][aspect_topic_u] += 1;
 #else
@@ -409,35 +409,33 @@ void Model::init_inf(){
 #endif
         }
     }
-
-    return RET_OK_STATUS;
 }
 
 void Model::estimate(){
-    int tmp_uid, tmp_iid;
+    int tmp_uid, tmp_iid, tmp_reviewidx;
     int sp_aspect, sp_rating;
     printf("Total sampling %d iterations.\n", total_niters);
 
 #ifdef CONT_DEBUG
     compute_user_pseudo_aspect();
     compute_item_pseudo_polarity();
-    prediction("train", EVAL_RMSE);
+    prediction(TRAIN_DATA, EVAL_RMSE);
     compute_user_aspect();
     compute_item_polarity();
-    prediction("test", EVAL_RMSE);
+    prediction(TEST_DATA, EVAL_RMSE);
 #endif
     
-    for (int i=0; i<total_iters; i++){
+    for (int i=0; i<total_niters; i++){
         printf("Current iteration %d ...\r", i);
         
         // ---- learning regression parameters ---- //
-        compute_as_rating("train");
+        compute_as_rating(TRAIN_DATA);
         mat hardmard_mat = user_pseudo_aspect%item_pseudo_polarity;
         lambda = inv(sigma_reg_prior*eye<mat>(K+1, K+1) + hardmard_mat.t()*
                 hardmard_mat)*hardmard_mat.t()*ptrndata->as_rating;
 
         // ---- sampling parameters for aspect-sentiment topic model ---- //
-        compute_as_rating("train");
+        compute_as_rating(TRAIN_DATA);
         for (int ii=0; ii<niters_gibbs; i++){
             for (int j=0; j<ptrndata->nR; j++){
                 tmp_uid = ptrndata->reviews[j]->userid;
@@ -466,21 +464,21 @@ void Model::estimate(){
                         ptrndata->reviews[tmp_reviewidx]->z_au[m] = sp_aspect;
                     }
                 }
-                prediction("train", EVAL_PERPLEXITY);
+                prediction(TRAIN_DATA, EVAL_PERPLEXITY);
             }
             
         }
 
         // ---- sgd for bias matrix factorization ---- //
-        compute_mf_rating("train");
+        compute_mf_rating(TRAIN_DATA);
         sgd_bias_mf();
     }
 
 #ifdef CONT_DEBUG
-    prediction("train", EVAL_RMSE);
+    prediction(TRAIN_DATA, EVAL_RMSE);
     compute_user_aspect();
     compute_item_polarity();
-    prediction("test", EVAL_RMSE);
+    prediction(TEST_DATA, EVAL_RMSE);
 #endif
         
     printf("Iterative Gibbs Sampling and SGD algorithm is finished.\n");
@@ -488,8 +486,8 @@ void Model::estimate(){
     save_model();
     if (model_status == MODEL_STATUS_DEBUG){
         inference();
-        prediction("test", EVAL_RMSE);
-        save_rating("test");
+        prediction(TEST_DATA, EVAL_RMSE);
+        save_rating(TEST_DATA);
     }
 }
 
@@ -514,18 +512,18 @@ void inference(){
     compute_psai_t();
     compute_phi_t();
     compute_beta_t();
-    prediction("test", EVAL_PERPLEXITY);
+    prediction(TEST_DATA, EVAL_PERPLEXITY);
 }
 
-void Model::compute_as_rating(string dataseg){
+void Model::compute_as_rating(const string dataseg){
     int tmp_uid, tmp_iid;
-    if (dataseg == "train"){
+    if (dataseg == TRAIN_DATA){
         for (int i=0; i<ptrndata->nR; i++){
             tmp_uid = ptrndata->reviews[i]->userid;
             tmp_iid = ptrndata->reviews[i]->itemid;
             ptrndata->as_rating(i) = ptrndata->rating_vec(i) - user_factor.row(tmp_uid)*item_factor.row(tmp_iid).t() - user_bias(tmp_uid) - item_bias(tmp_iid);
         }
-    }else if (dataseg == "test"){
+    }else if (dataseg == TEST_DATA){
         for (int i=0; i<ptstdata->nR; i++){
             tmp_uid = ptstdata->reviews[i]->userid;
             tmp_iid = ptstdata->reviews[i]->itemid;
@@ -534,13 +532,13 @@ void Model::compute_as_rating(string dataseg){
     }
 }
 
-void Model::compute_mf_rating(string dataseg){
+void Model::compute_mf_rating(const string dataseg){
     int tmp_uid, tmp_iid;
-    if (dataseg == "train"){
+    if (dataseg == TRAIN_DATA){
         for (int i=0; i<ptrndata->nR; i++){
             ptrndata->as_rating(i) = ptrndata->rating_vec(i) - lambda.t()*(user_pseudo_aspect.row(i).t()%item_pseudo_polarity.row(i).t());
         }
-    }else if (dataseg == "test"){
+    }else if (dataseg == TEST_DATA){
         for (int i=0; i<ptstdata->nR; i++){
             tmp_uid = ptstdata->reviews[i]->userid;
             tmp_iid = ptstdata->reviews[i]->itemid;
@@ -549,14 +547,14 @@ void Model::compute_mf_rating(string dataseg){
     }
 }
 
-void Model::prediction(string dataseg, int eval_method){
+void Model::prediction(const string dataseg, int eval_method){
     if (!ptstdata){
         printf("Test data didn't loading.\n");
         exit(1);
     }      
   
     if (eval_method == EVAL_RMSE){
-        if (dataseg == "train"){
+        if (dataseg == TRAIN_DATA){
             colvec pred_rating = zeros<colvec>(ptrndata->nR);
             for (int i = 0; i < ptstdata->nR; i++){
                 //for (int k=0; k<K; k++){
@@ -569,7 +567,7 @@ void Model::prediction(string dataseg, int eval_method){
             }
             float result = evaluation(ptrndata->rating_vec, pred_rating, EVAL_RMSE);
             printf("RMSE of training data is: %.4f\n", result);
-        }else if (dataseg == "test"){
+        }else if (dataseg == TEST_DATA){
             colvec pred_rating = zeros<colvec>(ptstdata->nR);
             for (int i = 0; i < ptstdata->nR; i++){
                 int tmp_uid = ptstdata->reviews[i].userid;
@@ -579,11 +577,12 @@ void Model::prediction(string dataseg, int eval_method){
             float result = evaluation(ptstdata->rating_vec, pred_rating, EVAL_RMSE);
             printf("RMSE of test data is: %.4f\n", result);
         }
-    } else if (eval_method == EVAL_PERP){
-        if (dataseg == "train"){
-            printf("To be completed.\n");
-        }else if (dataseg == "test"){
-            printf("To be completed.\n");
+    }else if (eval_method == EVAL_PERP){
+        double perp = eval_corp_perp(dataseg, REVIEW_SINGLE_FORM){
+        if (dataseg == TRAIN_DATA){
+            printf("Perplexity of training data is: %.4f\n", perp);
+        }else if (dataseg == TEST_DATA){
+            printf("Perplexity of test data is: %.4f\n", perp);
         }
     }
 }
@@ -1042,35 +1041,33 @@ double Model::eval_rmse(colvec real_rating, colvec pred_rating){
     return sqrt(sum(pow((real_rating - pred_rating), 2))/pred_rating.n_rows());
 }
 
-double Model::eval_corp_perp(string dataseg, string review_form){
+double Model::eval_corp_perp(const string dataseg, const string review_form){
     int wordnum = 0;
     double perp = 0.0;
    
-    if (data_seg == "train"){
-        if (review_form == "set"){
+    if (data_seg == TRAIN_DATA){
+        if (review_form == REVIEW_SET_FORM){
             printf("Need to be implemented.\n");
-        }else if (review_form == "single"){
+        }else if (review_form == REVIEW_SINGLE_FORM){
             for (int i=0; i<ptrndata->nR; i++){
                 wordnum += 2*ptrndata->reviews[i]->length;
                 perp += eval_doc_perp(i, dataseg);
             }
             perp = exp(-perp/wordnum);
-            printf("Perplexity of training data is: %.4f\n", perp);
         }
-    }else if (data_seg == "test"){
+    }else if (data_seg == TEST_DATA){
         for (int i=0; i<ptstdata->nR; i++){
             wordnum += 2*ptstdata->reviews[i]->length;
             perp += eval_doc_perp(i, dataseg);
         }
         perp = exp(-perp/wordnum);
-        printf("Perplexity of test data is: %.4f\n", perp);
     }
 
-    return 0.0;
+    return perp;
 }
 
-double Model::eval_doc_perp(int idx, string dataseg){
-    if (dataseg == "train"){
+double Model::eval_doc_perp(int idx, const string dataseg){
+    if (dataseg == TRAIN_DATA){
         double doc_perp = 0.0;
         rowvec doc_aspect = zeros<rowvec>(K);
         for (int i=0; i<K; i++){
@@ -1085,7 +1082,7 @@ double Model::eval_doc_perp(int idx, string dataseg){
             doc_perp += log(doc_aspect*(psai*phi.col(sid) + beta.col(tid)));
         }
         return doc_perp;
-    }else if (dataseg == "test"){
+    }else if (dataseg == TEST_DATA){
         double doc_perp = 0.0;
         rowvec doc_aspect = zeros<rowvec>(K);
         for (int i=0; i<K; i++){

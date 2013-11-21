@@ -22,6 +22,7 @@ vector<char *> utils::str_split(char * in_str, char sep){
 
 char * utils::sub_str(int s_idx, int e_idx, char * raw_str){
     char new_str[e_idx+1-s_idx+1];  // first +1: right number, second +1: "\0"
+    char * new_str = 
 
     for (int i=s_idx; i <= e_idx; i++)
         new_str[i-s_idx] = raw_str[i];
@@ -121,7 +122,7 @@ mat utils::load_matrix(string file_path, int xdim, int ydim){
     return tmp_mat;
 }
 
-colvec utlis::load_colvec(string file_path, int ndim){
+colvec utils::load_colvec(string file_path, int ndim){
     colvec tmp_colvec = randu<colvec>(ndim+1);
 
     FILE * fin = fopen(file_path.c_str(), "r");

@@ -9,10 +9,12 @@
 
 using namespace std;
 
+void show_help();
+
 int main(int argc, char ** argv){
-    model jbasmf;
+    Model jbasmf;
     
-    if (jbasmf.init_model(argc, argv)) {
+    if (jbasmf.init_model(argc, argv)){
 	    show_help();
 	    return 1;
     }

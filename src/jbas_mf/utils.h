@@ -9,8 +9,6 @@
 
 #include "setting.h"
 
-using namespace std;
-
 namespace utils{
     // char array string split function
     vector<char *> split_str(char * in_str, char sep);

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export LD_BIBRARY_PATH=/usr/local/include:.$LD_BIRARY_PATH
+export LD_LIBRARY_PATH=/usr/local/include:.$LD_BIRARY_PATH
 
 if [-n $1]
 then

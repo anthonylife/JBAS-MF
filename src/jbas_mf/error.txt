@@ -1,0 +1,73 @@
+g++ -O2 -std=c++0x -march=native -mtune=native -funroll-loops -Wall main.cpp setting.h dataset.cpp dataset.h model.cpp model.h utils.cpp utils.h -o jbasmf -larmadillo 
+model.cpp: In member function ‘void Model::estimate()’:
+model.cpp:446:21: error: ‘tmp_reviewidx’ was not declared in this scope
+model.cpp:459:21: error: ‘tmp_reviewidx’ was not declared in this scope
+model.cpp:490:27: error: no matching function for call to ‘Model::save_rating(const char [5])’
+model.cpp:490:27: note: candidate is:
+model.h:205:14: note: void Model::save_rating()
+model.h:205:14: note:   candidate expects 0 arguments, 1 provided
+model.cpp: In function ‘void inference()’:
+model.cpp:497:67: error: ‘niters_t’ was not declared in this scope
+model.cpp:498:23: error: ‘niter_t’ was not declared in this scope
+model.cpp:499:46: error: ‘i’ was not declared in this scope
+model.cpp:501:25: error: ‘ptstdata’ was not declared in this scope
+model.cpp:503:53: error: ‘inf_aspect_sampling’ was not declared in this scope
+model.cpp:505:53: error: ‘inf_rating_sampling’ was not declared in this scope
+model.cpp:512:20: error: ‘compute_psai_t’ was not declared in this scope
+model.cpp:513:19: error: ‘compute_phi_t’ was not declared in this scope
+model.cpp:514:20: error: ‘compute_beta_t’ was not declared in this scope
+model.cpp:515:42: error: ‘prediction’ was not declared in this scope
+model.cpp: In member function ‘void Model::compute_as_rating(std::string)’:
+model.cpp:524:158: error: cannot convert ‘arma::enable_if2<true, const arma::eOp<arma::eOp<arma::eOp<arma::Glue<arma::subview_row<double>, arma::Op<arma::subview_row<double>, arma::op_htrans>, arma::glue_times>, arma::eop_scalar_minus_pre>, arma::eop_scalar_minus_post>, arma::eop_scalar_minus_post> >::result {aka const arma::eOp<arma::eOp<arma::eOp<arma::Glue<arma::subview_row<double>, arma::Op<arma::subview_row<double>, arma::op_htrans>, arma::glue_times>, arma::eop_scalar_minus_pre>, arma::eop_scalar_minus_post>, arma::eop_scalar_minus_post>}’ to ‘double’ in assignment
+model.cpp:530:158: error: cannot convert ‘arma::enable_if2<true, const arma::eOp<arma::eOp<arma::eOp<arma::Glue<arma::subview_row<double>, arma::Op<arma::subview_row<double>, arma::op_htrans>, arma::glue_times>, arma::eop_scalar_minus_pre>, arma::eop_scalar_minus_post>, arma::eop_scalar_minus_post> >::result {aka const arma::eOp<arma::eOp<arma::eOp<arma::Glue<arma::subview_row<double>, arma::Op<arma::subview_row<double>, arma::op_htrans>, arma::glue_times>, arma::eop_scalar_minus_pre>, arma::eop_scalar_minus_post>, arma::eop_scalar_minus_post>}’ to ‘double’ in assignment
+model.cpp: In member function ‘void Model::compute_mf_rating(std::string)’:
+model.cpp:539:137: error: cannot convert ‘arma::enable_if2<true, const arma::eOp<arma::Glue<arma::Op<arma::Col<double>, arma::op_htrans>, arma::eGlue<arma::Op<arma::subview_row<double>, arma::op_htrans>, arma::Op<arma::subview_row<double>, arma::op_htrans>, arma::eglue_schur>, arma::glue_times>, arma::eop_scalar_minus_pre> >::result {aka const arma::eOp<arma::Glue<arma::Op<arma::Col<double>, arma::op_htrans>, arma::eGlue<arma::Op<arma::subview_row<double>, arma::op_htrans>, arma::Op<arma::subview_row<double>, arma::op_htrans>, arma::eglue_schur>, arma::glue_times>, arma::eop_scalar_minus_pre>}’ to ‘double’ in assignment
+model.cpp:545:135: error: expected ‘)’ before ‘;’ token
+model.cpp:545:135: error: cannot convert ‘arma::enable_if2<true, const arma::eOp<arma::Glue<arma::Op<arma::Col<double>, arma::op_htrans>, arma::eGlue<arma::Op<arma::subview_row<double>, arma::op_htrans>, arma::Op<arma::subview_row<double>, arma::op_htrans>, arma::eglue_schur>, arma::glue_times>, arma::eop_scalar_minus_pre> >::result {aka const arma::eOp<arma::Glue<arma::Op<arma::Col<double>, arma::op_htrans>, arma::eGlue<arma::Op<arma::subview_row<double>, arma::op_htrans>, arma::Op<arma::subview_row<double>, arma::op_htrans>, arma::eglue_schur>, arma::glue_times>, arma::eop_scalar_minus_pre>}’ to ‘double’ in assignment
+model.cpp: In member function ‘void Model::prediction(std::string, int)’:
+model.cpp:564:52: error: request for member ‘userid’ in ‘*(((Model*)this)->Model::ptrndata->Dataset::reviews + ((long unsigned int)(((long unsigned int)i) * 8ul)))’, which is of non-class type ‘Review*’
+model.cpp:565:52: error: request for member ‘itemid’ in ‘*(((Model*)this)->Model::ptrndata->Dataset::reviews + ((long unsigned int)(((long unsigned int)i) * 8ul)))’, which is of non-class type ‘Review*’
+model.cpp:566:125: error: request for member ‘t’ in ‘((Model*)this)->Model::item_pseudo_polarity.arma::Mat<eT>::operator() [with eT = double, arma::uword = unsigned int](((unsigned int)i))’, which is of non-class type ‘double’
+model.cpp:568:83: error: ‘evaluation’ was not declared in this scope
+model.cpp:573:52: error: request for member ‘userid’ in ‘*(((Model*)this)->Model::ptstdata->Dataset::reviews + ((long unsigned int)(((long unsigned int)i) * 8ul)))’, which is of non-class type ‘Review*’
+model.cpp:574:52: error: request for member ‘itemid’ in ‘*(((Model*)this)->Model::ptstdata->Dataset::reviews + ((long unsigned int)(((long unsigned int)i) * 8ul)))’, which is of non-class type ‘Review*’
+model.cpp:575:123: error: request for member ‘t’ in ‘((Model*)this)->Model::item_polarity.arma::Mat<eT>::operator() [with eT = double, arma::uword = unsigned int](((unsigned int)tmp_iid))’, which is of non-class type ‘double’
+model.cpp:577:83: error: ‘evaluation’ was not declared in this scope
+model.cpp:580:30: error: ‘EVAL_PERP’ was not declared in this scope
+model.cpp:581:66: error: expected ‘,’ or ‘;’ before ‘{’ token
+model.cpp:581:16: warning: unused variable ‘perp’ [-Wunused-variable]
+model.cpp:1337:1: error: expected ‘}’ at end of input
+model.cpp:1337:1: error: expected ‘}’ at end of input
+utils.cpp:3:56: error: ‘std::vector<char*> utils::str_split(char*, char)’ should have been declared inside ‘utils’
+utils.cpp: In function ‘std::vector<char*> utils::str_split(char*, char)’:
+utils.cpp:15:46: error: too few arguments to function ‘char* utils::sub_str(int, int, char*)’
+utils.h:16:12: note: declared here
+utils.cpp: In function ‘char* utils::sub_str(int, int, char*)’:
+utils.cpp:25:12: error: conflicting declaration ‘char* new_str’
+utils.cpp:24:10: error: ‘new_str’ has a previous declaration as ‘char new_str [(((long unsigned int)(((long int)(((e_idx + 1) - s_idx) + 1)) + -0x00000000000000001)) + 1)]’
+utils.cpp:27:5: error: expected primary-expression before ‘for’
+utils.cpp:27:23: error: ‘i’ was not declared in this scope
+utils.cpp:27:38: error: expected ‘;’ before ‘)’ token
+utils.cpp:24:10: warning: address of local variable ‘new_str’ returned [enabled by default]
+utils.cpp: In function ‘std::vector<std::basic_string<char> > utils::split_str(std::string, char)’:
+utils.cpp:45:58: error: no match for call to ‘(std::string {aka std::basic_string<char>}) (int&, int)’
+utils.cpp: At global scope:
+utils.cpp:70:12: error: found ‘:’ in nested-name-specifier, expected ‘::’
+utils.cpp: In function ‘int* utils::alloc_vector(int)’:
+utils.cpp:74:5: error: expected ‘;’ before ‘for’
+utils.cpp:74:19: error: ‘i’ was not declared in this scope
+utils.cpp:74:30: error: expected ‘;’ before ‘)’ token
+utils.cpp: In function ‘arma::mat utils::load_matrix(std::string, int, int)’:
+utils.cpp:108:37: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+utils.cpp:112:44: warning: comparison between signed and unsigned integer expressions [-Wsign-compare]
+utils.cpp: In function ‘arma::colvec utils::load_colvec(std::string, int)’:
+utils.cpp:141:17: error: ‘xdim’ was not declared in this scope
+utils.cpp: In function ‘void utils::tic()’:
+utils.cpp:150:19: error: overloaded function with no contextual type information
+utils.cpp: In function ‘float utils::toc()’:
+utils.cpp:154:17: error: overloaded function with no contextual type information
+utils.cpp:155:24: error: invalid operands of types ‘<unresolved overloaded function type>’ and ‘<unresolved overloaded function type>’ to binary ‘operator-’
+utils.cpp:156:1: warning: control reaches end of non-void function [-Wreturn-type]
+utils.cpp: In function ‘int utils::cnt_file_line(std::string)’:
+utils.cpp:63:43: warning: ignoring return value of ‘char* fgets(char*, int, FILE*)’, declared with attribute warn_unused_result [-Wunused-result]
+make: *** [jbasmf] Error 1
