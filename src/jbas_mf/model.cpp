@@ -66,9 +66,9 @@ void Model::set_default_values(){
     pretraining = false;
     
     // ----- Model related file path ----- //
-    model_dir[0] = "./model/cellar/";
-    model_dir[1] = "./model/movie/";
-    model_dir[2] = "./model/food/";
+    model_dir[0] = "/home/anthonylife/Doctor/Code/MyPaperCode/JBAS-MF/src/jbas_mf/model/cellar/";
+    model_dir[1] = "/home/anthonylife/Doctor/Code/MyPaperCode/JBAS-MF/src/jbas_mf/model/movie/";
+    model_dir[2] = "/home/anthonylife/Doctor/Code/MyPaperCode/JBAS-MF/src/jbas_mf/model/food/";
     model_psai_file = "model_psai.mat";
     model_phi_file  = "model_phi.mat";
     model_beta_file = "model_beta.mat";
@@ -83,9 +83,9 @@ void Model::set_default_values(){
     model_regpara_file   = "model_regpara.mat";
 
     // ----- Train and test data path ----- //
-    data_dir[0] = "../../data/CellarTracker/train-test/";
-    data_dir[1] = "../../data/Amazon-Moviews/train-test/";
-    data_dir[2] = "../../data/Amazon-Food/train-test/";
+    data_dir[0] = "/home/anthonylife/Doctor/Code/MyPaperCode/JBAS-MF/data/CellarTracker/train-test/";
+    data_dir[1] = "/home/anthonylife/Doctor/Code/MyPaperCode/JBAS-MF/data/Amazon-Moviews/train-test/";
+    data_dir[2] = "/home/anthonylife/Doctor/Code/MyPaperCode/JBAS-MF/data/Amazon-Food/train-test/";
     train_user_file = "train_user_jbasmf.dat";
     train_item_file = "train_item_jbasmf.dat";
     train_rating_file = "train_rating_jbasmf.dat";
@@ -100,6 +100,12 @@ void Model::set_default_values(){
     user_bias_file = "libmf_user_bias.dat";
     item_factor_file = "libmf_item_factor.dat";
     item_bias_file = "libmf_item_bias_dat";
+        
+    // ----- Output file path for test result ----- //
+    result_dir = "/home/anthonylife/Doctor/Code/MyPaperCode/JBAS-MF/result/rating/";
+    rating_output_file[0] = "cellar_jbasmf_rating.dat";
+    rating_output_file[1] = "movie_jbasmf_rating.dat";
+    rating_output_file[2] = "food_jbasmf_rating.dat";
 }
 
 int Model::parse_args(int argc, char ** argv){
@@ -419,10 +425,10 @@ void Model::estimate(){
 #ifdef CONT_DEBUG
     compute_user_pseudo_aspect();
     compute_item_pseudo_polarity();
-    prediction(TRAIN_DATA, EVAL_RMSE);
+    prediction(TRAIN_DATA, EVAL_RMSE, false);
     compute_user_aspect();
     compute_item_polarity();
-    prediction(TEST_DATA, EVAL_RMSE);
+    prediction(TEST_DATA, EVAL_RMSE, false);
 #endif
     
     for (int i=0; i<total_niters; i++){
@@ -464,7 +470,7 @@ void Model::estimate(){
                         ptrndata->reviews[tmp_reviewidx]->z_au[m] = sp_aspect;
                     }
                 }
-                prediction(TRAIN_DATA, EVAL_PERPLEXITY);
+                prediction(TRAIN_DATA, EVAL_PERPLEXITY, false);
             }
             
         }
@@ -475,10 +481,10 @@ void Model::estimate(){
     }
 
 #ifdef CONT_DEBUG
-    prediction(TRAIN_DATA, EVAL_RMSE);
+    prediction(TRAIN_DATA, EVAL_RMSE, true);
     compute_user_aspect();
     compute_item_polarity();
-    prediction(TEST_DATA, EVAL_RMSE);
+    prediction(TEST_DATA, EVAL_RMSE, true);
 #endif
         
     printf("Iterative Gibbs Sampling and SGD algorithm is finished.\n");
@@ -486,17 +492,16 @@ void Model::estimate(){
     save_model();
     if (model_status == MODEL_STATUS_DEBUG){
         inference();
-        prediction(TEST_DATA, EVAL_RMSE);
-        save_rating(TEST_DATA);
+        prediction(TEST_DATA, EVAL_RMSE, true);
     }
 }
 
-void inference(){
+void Model::inference(){
     int sp_aspect, sp_rating;
     
     printf("Sampling %d iterations for inference on testdata.\n", niters_t);
-    for (int ii=0; ii<niter_t; ii++){
-        printf("Current iteration %d ...\r", i);
+    for (int ii=0; ii<niters_t; ii++){
+        printf("Current iteration %d ...\r", ii);
         
         for (int i=0; i<ptstdata->nR; i++){
             for (int j=0; j<ptstdata->reviews[i]->length; j++){
@@ -512,73 +517,90 @@ void inference(){
     compute_psai_t();
     compute_phi_t();
     compute_beta_t();
-    prediction(TEST_DATA, EVAL_PERPLEXITY);
+    prediction(TEST_DATA, EVAL_PERPLEXITY, true);
 }
 
 void Model::compute_as_rating(const string dataseg){
+    mat inter_result;
     int tmp_uid, tmp_iid;
     if (dataseg == TRAIN_DATA){
         for (int i=0; i<ptrndata->nR; i++){
             tmp_uid = ptrndata->reviews[i]->userid;
             tmp_iid = ptrndata->reviews[i]->itemid;
-            ptrndata->as_rating(i) = ptrndata->rating_vec(i) - user_factor.row(tmp_uid)*item_factor.row(tmp_iid).t() - user_bias(tmp_uid) - item_bias(tmp_iid);
+            inter_result = user_factor.row(tmp_uid)*item_factor.row(tmp_iid).t();
+            ptrndata->as_rating(i) = ptrndata->rating_vec(i)
+                - inter_result(0,0) - user_bias(tmp_uid) - item_bias(tmp_iid);
         }
     }else if (dataseg == TEST_DATA){
         for (int i=0; i<ptstdata->nR; i++){
             tmp_uid = ptstdata->reviews[i]->userid;
             tmp_iid = ptstdata->reviews[i]->itemid;
-            ptstdata->as_rating(i) = ptstdata->rating_vec(i) - user_factor.row(tmp_uid)*item_factor.row(tmp_iid).t() - user_bias(tmp_uid) - item_bias(tmp_iid);
+            inter_result = user_factor.row(tmp_uid)*item_factor.row(tmp_iid).t(); 
+            ptstdata->as_rating(i) = ptstdata->rating_vec(i)
+                - inter_result(0,0) - user_bias(tmp_uid) - item_bias(tmp_iid);
         }
     }
 }
 
 void Model::compute_mf_rating(const string dataseg){
+    mat inter_result;
     int tmp_uid, tmp_iid;
     if (dataseg == TRAIN_DATA){
         for (int i=0; i<ptrndata->nR; i++){
-            ptrndata->as_rating(i) = ptrndata->rating_vec(i) - lambda.t()*(user_pseudo_aspect.row(i).t()%item_pseudo_polarity.row(i).t());
+            inter_result = lambda.t()*(user_pseudo_aspect.row(i).t()%item_pseudo_polarity.row(i).t());
+            ptrndata->as_rating(i) = ptrndata->rating_vec(i) - inter_result(0,0);
         }
     }else if (dataseg == TEST_DATA){
         for (int i=0; i<ptstdata->nR; i++){
             tmp_uid = ptstdata->reviews[i]->userid;
             tmp_iid = ptstdata->reviews[i]->itemid;
-            ptstdata->as_rating(i) = ptstdata->rating_vec(i) - lambda.t()*(user_aspect.row(tmp_uid).t()%item_polarity.row(tmp_iid).t();
+            inter_result = lambda.t()*(user_aspect.row(tmp_uid).t()%item_polarity.row(tmp_iid).t());
+            ptstdata->as_rating(i) = ptstdata->rating_vec(i) - inter_result(0,0);
         }
     }
 }
 
-void Model::prediction(const string dataseg, int eval_method){
+void Model::prediction(const string dataseg, int eval_method, bool save_tag){
     if (!ptstdata){
         printf("Test data didn't loading.\n");
         exit(1);
     }      
   
     if (eval_method == EVAL_RMSE){
+        colvec pred_rating;
         if (dataseg == TRAIN_DATA){
-            colvec pred_rating = zeros<colvec>(ptrndata->nR);
-            for (int i = 0; i < ptstdata->nR; i++){
+            pred_rating = zeros<colvec>(ptrndata->nR);
+            for (int i = 0; i < ptrndata->nR; i++){
                 //for (int k=0; k<K; k++){
                 //    user_pseudo_aspect(i, k) = float(nd_zu[i][k])/ndsum(i);
                 //    item_pseudo_polarity(i, k) = float(nd_rk[i][k])/nd_zi[i][k];
                 //}
-                int tmp_uid = ptrndata->reviews[i].userid;
-                int tmp_iid = ptrndata->reviews[i].itemid;
-                pred_rating(i) = rating_prediction(tmp_uid, tmp_iid, user_pseudo_aspect.row(i).t(), item_pseudo_polarity(i).t());
+                int tmp_uid = ptrndata->reviews[i]->userid;
+                int tmp_iid = ptrndata->reviews[i]->itemid;
+                pred_rating(i) = rating_prediction(tmp_uid, tmp_iid,
+                        user_pseudo_aspect.row(tmp_uid).t(), item_pseudo_polarity.row(tmp_iid).t());
             }
             float result = evaluation(ptrndata->rating_vec, pred_rating, EVAL_RMSE);
             printf("RMSE of training data is: %.4f\n", result);
         }else if (dataseg == TEST_DATA){
-            colvec pred_rating = zeros<colvec>(ptstdata->nR);
+            pred_rating = zeros<colvec>(ptstdata->nR);
             for (int i = 0; i < ptstdata->nR; i++){
-                int tmp_uid = ptstdata->reviews[i].userid;
-                int tmp_iid = ptstdata->reviews[i].itemid;
-                pred_rating(i) = rating_prediction(tmp_uid, tmp_iid, user_aspect.row(tmp_uid).t(), item_polarity(tmp_iid).t());
+                int tmp_uid = ptstdata->reviews[i]->userid;
+                int tmp_iid = ptstdata->reviews[i]->itemid;
+                pred_rating(i) = rating_prediction(tmp_uid, tmp_iid,
+                        user_aspect.row(tmp_uid).t(), item_polarity.row(tmp_iid).t());
             }
             float result = evaluation(ptstdata->rating_vec, pred_rating, EVAL_RMSE);
             printf("RMSE of test data is: %.4f\n", result);
         }
+        
+        if (save_tag){
+            string output_path = result_dir+rating_output_file[data_type];
+            save_rating(pred_rating, output_path);
+        }
     }else if (eval_method == EVAL_PERP){
-        double perp = eval_corp_perp(dataseg, REVIEW_SINGLE_FORM){
+        double perp;
+        perp = eval_corp_perp(dataseg, REVIEW_SINGLE_FORM);
         if (dataseg == TRAIN_DATA){
             printf("Perplexity of training data is: %.4f\n", perp);
         }else if (dataseg == TEST_DATA){
@@ -1333,6 +1355,21 @@ int Model::save_model_as_para(){
     item_factor.load(item_factor_file_path);
     item_bias.load(item_bias_file_path);
 
+    return RET_OK_STATUS;
+}
+
+int Model::save_rating(colvec rating, const string rating_file_path){
+    FILE * fout = fopen(rating_file_path.c_str(), "w");
+    if (!fout){
+        printf("Fail to save file %s!\n", rating_file_path.c_str());
+        return RET_ERROR_STATUS;
+    }
+
+    for (int i=0; i<rating.n_rows; i++){
+        fprintf(fout, "%f\n", rating(i));
+    }
+    fclose(fout);
+    
     return RET_OK_STATUS;
 }
 

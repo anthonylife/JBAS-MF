@@ -110,7 +110,6 @@ class Model{
         string model_psai_file;     
         string model_phi_file; 
         string model_beta_file; 
-        //string model_suffix;
         string model_user_factor_file;
         string model_user_bias_file;
         string model_item_factor_file;
@@ -138,6 +137,10 @@ class Model{
         string item_factor_file;
         string item_bias_file;
 
+        // ----- Output file path for test result ----- //
+        string result_dir;
+        string rating_output_file[DATA_NUM];
+
         // ----- model related functions ----- //
         int parse_args(int argc, char ** argv);    // command line 
         void set_default_values();                  // set default values 
@@ -153,7 +156,7 @@ class Model{
         void estimate();                // estimating model parameters
         void inference();               // inference topic dis on new reviews
         // prediction ont test data set
-        void prediction(const string dataseg, int eval_method);
+        void prediction(const string dataseg, int eval_method, bool save_tag);
         //void solve_regpara();           // solving the regression parameters
         
         // sampling aspect topic for item in est 
@@ -202,7 +205,8 @@ class Model{
         int load_model_hyperpara();
         int load_model_mf_para();
         int load_model_as_para();
-        void save_rating();             // save test rating values
+        // save test rating values
+        int save_rating(colvec rating, const string rating_file_path); 
 };
 
 #endif
