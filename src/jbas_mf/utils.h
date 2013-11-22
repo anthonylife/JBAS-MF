@@ -29,10 +29,6 @@ namespace utils{
     mat load_matrix(string file_path, int xdim, int ydim);
     // load vector data from file
     colvec load_colvec(string file_path, int ndim);
-    // start timer
-    void tic();
-    // end timer and output time of duration
-    float toc();
 }
 
 #endif

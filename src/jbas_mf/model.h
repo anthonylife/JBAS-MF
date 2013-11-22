@@ -188,7 +188,9 @@ class Model{
         vec get_user_vec(string dataseg, int itemid);
         vec get_item_vec(string dataseg, int userid);
 
-        double rating_prediction(int uid, int iid);  // predicting rating value
+        // predicting rating value
+        inline double rating_prediction(int uid, int iid,
+                colvec aspect, colvec polarity);
         double eval_rmse(colvec real_rating, colvec pred_rating);
         double eval_corp_perp(const string dataseg, const string review_form);
         double eval_doc_perp(int reviewidx, const string dataseg);
@@ -207,6 +209,16 @@ class Model{
         int load_model_as_para();
         // save test rating values
         int save_rating(colvec rating, const string rating_file_path); 
+        
+        clock_t begin, end;
+        void tic();         // start timer
+        float toc();        // end timer and output time of duration
 };
+
+double Model::rating_prediction(int uid, int iid, colvec aspect, colvec polarity){
+    mat as_rating = lambda.t()*(aspect%polarity);
+    mat mf_rating = user_factor.row(uid)*item_factor.row(iid).t();
+    return as_rating(0,0) + mf_rating(0,0) + user_bias(uid) + item_bias(iid);
+} 
 
 #endif

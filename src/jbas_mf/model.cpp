@@ -362,6 +362,9 @@ void Model::load_pretr(){
     item_factor = utils::load_matrix(item_factor_file_path, nI, ndim);
     item_bias = utils::load_colvec(item_bias_file_path, nI);
 }
+void Model::init_estc(){
+    printf("Function init_est() needs to be implemented.\n");
+}
 
 void Model::init_inf(){
     if (model_status == MODEL_STATUS_INF)
@@ -567,6 +570,8 @@ void Model::prediction(const string dataseg, int eval_method, bool save_tag){
     }      
   
     if (eval_method == EVAL_RMSE){
+        int tmp_uid, tmp_iid;
+        float result;
         colvec pred_rating;
         if (dataseg == TRAIN_DATA){
             pred_rating = zeros<colvec>(ptrndata->nR);
@@ -575,22 +580,22 @@ void Model::prediction(const string dataseg, int eval_method, bool save_tag){
                 //    user_pseudo_aspect(i, k) = float(nd_zu[i][k])/ndsum(i);
                 //    item_pseudo_polarity(i, k) = float(nd_rk[i][k])/nd_zi[i][k];
                 //}
-                int tmp_uid = ptrndata->reviews[i]->userid;
-                int tmp_iid = ptrndata->reviews[i]->itemid;
+                tmp_uid = ptrndata->reviews[i]->userid;
+                tmp_iid = ptrndata->reviews[i]->itemid;
                 pred_rating(i) = rating_prediction(tmp_uid, tmp_iid,
                         user_pseudo_aspect.row(tmp_uid).t(), item_pseudo_polarity.row(tmp_iid).t());
             }
-            float result = evaluation(ptrndata->rating_vec, pred_rating, EVAL_RMSE);
+            result = eval_rmse(ptrndata->rating_vec, pred_rating);
             printf("RMSE of training data is: %.4f\n", result);
         }else if (dataseg == TEST_DATA){
             pred_rating = zeros<colvec>(ptstdata->nR);
             for (int i = 0; i < ptstdata->nR; i++){
-                int tmp_uid = ptstdata->reviews[i]->userid;
-                int tmp_iid = ptstdata->reviews[i]->itemid;
+                tmp_uid = ptstdata->reviews[i]->userid;
+                tmp_iid = ptstdata->reviews[i]->itemid;
                 pred_rating(i) = rating_prediction(tmp_uid, tmp_iid,
                         user_aspect.row(tmp_uid).t(), item_polarity.row(tmp_iid).t());
             }
-            float result = evaluation(ptstdata->rating_vec, pred_rating, EVAL_RMSE);
+            result = eval_rmse(ptstdata->rating_vec, pred_rating);
             printf("RMSE of test data is: %.4f\n", result);
         }
         
@@ -598,7 +603,7 @@ void Model::prediction(const string dataseg, int eval_method, bool save_tag){
             string output_path = result_dir+rating_output_file[data_type];
             save_rating(pred_rating, output_path);
         }
-    }else if (eval_method == EVAL_PERP){
+    }else if (eval_method == EVAL_PERPLEXITY){
         double perp;
         perp = eval_corp_perp(dataseg, REVIEW_SINGLE_FORM);
         if (dataseg == TRAIN_DATA){
@@ -608,12 +613,6 @@ void Model::prediction(const string dataseg, int eval_method, bool save_tag){
         }
     }
 }
-
-double Model::rating_prediction(int uid, int iid, colvec aspect, colvec polarity){
-    double as_rating = lambda.t()*(aspect%polarity);
-    double mf_rating  = user_factor.row(uid)*item_factor.row(iid).t() + user_bias(uid) + item_bias(iid);
-    return as_rating + mf_rating;
-} 
 
 int Model::esti_aspect_sampling(int set_idx, int review_idx, int term_idx){
     int aspect = ptrndata->reviews[review_idx]->z_ai[term_idx];
@@ -633,9 +632,9 @@ int Model::esti_aspect_sampling(int set_idx, int review_idx, int term_idx){
             (nasum_i[i]+Reta0) * (na_z[termid][i]+eta2)/(nasum_i[i]+Veta2);
     }
     prob = cumsum(prob);
-    double samp_prob = ((double)random()/RAND_MAX)*prob(K-1);
+    double sp_prob = ((double)random()/RAND_MAX)*prob(K-1);
     for (aspect=0; aspect<K; aspect++){
-        if (samp_prob>prob)
+        if (sp_prob>prob(aspect))
             break;
     }
 
@@ -648,7 +647,7 @@ int Model::esti_aspect_sampling(int set_idx, int review_idx, int term_idx){
 }
 
 int Model::esti_rating_sampling(int set_idx, int review_idx, int term_idx, int itemid){
-    int rating = ptrndata->reviews[review_idx]->r_s[term_idx]
+    int rating = ptrndata->reviews[review_idx]->r_s[term_idx];
     int aspect = ptrndata->reviews[review_idx]->z_ai[term_idx];
     int termid = ptrndata->reviews[review_idx]->sentimentid[term_idx];
     nd_kr[aspect][rating] -= 1;
@@ -658,7 +657,7 @@ int Model::esti_rating_sampling(int set_idx, int review_idx, int term_idx, int i
     rowvec tmp_polarity = item_pseudo_polarity.row(set_idx);
     tmp_polarity(aspect) -= double(rating-1)/nd_zi[set_idx][aspect];
 
-    double tmp_eta0;
+    mat inter_result;
     double Reta1 = V_s*eta1;
     double Reta1_ps = Reta1 - ptrndata->nneg_seed*eta1;
     double Reta1_ns = Reta1 - ptrndata->npos_seed*eta1;
@@ -671,8 +670,9 @@ int Model::esti_rating_sampling(int set_idx, int review_idx, int term_idx, int i
         double residual = 0.0;
         if (i==0){
             tmp_polarity(aspect) += (-1.0)/nd_zi[set_idx][aspect];
-            for (int j=0; j<userid_vec.size(); j++){
-                residual += pow(ptrndata->as_rating(items[itemid]->reviewidx_set[j])-(tmp_polarity%user_pseudo_aspect.row(userid_vec(j)))*lambda, 2)/sigma_reg;
+            for (unsigned int j=0; j<userid_vec.size(); j++){
+                inter_result = (tmp_polarity%user_pseudo_aspect.row(userid_vec(j)))*lambda;
+                residual += pow(ptrndata->as_rating(items[itemid]->reviewidx_set[j])-inter_result(0,0), 2)/sigma_reg;
             }
             if (seed_class==-1 or seed_class==0){
                 prob(i) = (nd_kr[aspect][i]+eta0)*(ns_r[termid][i]+eta1)
@@ -683,15 +683,17 @@ int Model::esti_rating_sampling(int set_idx, int review_idx, int term_idx, int i
             }
             tmp_polarity(aspect) -= (-1.0)/nd_zi[set_idx][aspect];
         }else if (i==1){
-            for (int j=0; j<userid_vec.size(); j++){
-                residual += pow(ptrndata->as_rating(items[itemid]->reviewidx_set[j])-(tmp_polarity%user_pseudo_aspect.row(userid_vec(j)))*lambda, 2)/sigma_reg;
+            for (unsigned int j=0; j<userid_vec.size(); j++){
+                inter_result = (tmp_polarity%user_pseudo_aspect.row(userid_vec(j)))*lambda;
+                residual += pow(ptrndata->as_rating(items[itemid]->reviewidx_set[j])-inter_result(0,0), 2)/sigma_reg;
             }
             prob(i) = (nd_kr[aspect][i]+eta0)*(ns_r[termid][i]+eta1)
                 /(nssum[i]+Reta1)*exp(-residual);
         }else if (i==2){
             tmp_polarity(aspect) += (1.0)/nd_zi[set_idx][aspect];
-            for (int j=0; j<userid_vec.size(); j++){
-                residual += pow(ptrndata->as_rating(items[itemid]->reviewidx_set[j])-(tmp_polarity%user_pseudo_aspect.row(userid_vec(j)))*lambda, 2)/sigma_reg;
+            for (unsigned int j=0; j<userid_vec.size(); j++){
+                inter_result = (tmp_polarity%user_pseudo_aspect.row(userid_vec(j)))*lambda;
+                residual += pow(ptrndata->as_rating(items[itemid]->reviewidx_set[j])-inter_result(0,0), 2)/sigma_reg;
             }
             if (seed_class==-1){
                 prob(i) = (nd_kr[aspect][i]+eta0)*(ns_r[termid][i])
@@ -704,9 +706,9 @@ int Model::esti_rating_sampling(int set_idx, int review_idx, int term_idx, int i
         }
     }
     prob = cumsum(prob);
-    double samp_prob = ((double)random()/RAND_MAX)*prob(RL-1);
+    double sp_prob = ((double)random()/RAND_MAX)*prob(RL-1);
     for (rating=0; rating<RL; rating++){
-        if (samp_prob>prob)
+        if (sp_prob>prob(rating))
             break;
     }
 
@@ -734,6 +736,7 @@ int Model::estu_aspect_sampling(int set_idx, int review_idx, int term_idx, int u
     vec prob = zeros<vec>(K);
     // do multinomial sampling via cumulative method
     
+    mat inter_result;
     rowvec tmp_user_aspect = zeros<rowvec>(K+1);
     for (int i=0; i<K; i++){
         double residual = 0.0;    
@@ -743,17 +746,17 @@ int Model::estu_aspect_sampling(int set_idx, int review_idx, int term_idx, int u
             else
                 tmp_user_aspect(j) = double(nd_zu[set_idx][j])/(ndsum[set_idx]+1);
         }
-        for (int j=0; j<itemid_vec.size(); j++){
-            residual += pow(ptrndata->as_rating(users[userid]->reviewidx_set[j])-
-                    (tmp_user_aspect%item_pseudo_polarity.row(itemid_vec(j)))*lambda, 2)/sigma_reg;
+        for (unsigned int j=0; j<itemid_vec.size(); j++){
+            inter_result = (tmp_user_aspect%item_pseudo_polarity.row(itemid_vec(j)))*lambda;
+            residual += pow(ptrndata->as_rating(users[userid]->reviewidx_set[j])-inter_result(0,0), 2)/sigma_reg;
         } 
         prob(i) = (nd_zu[set_idx][i]+alpha) * 
             (na_z[termid][i]+eta2)/(nasum_u[i]+Veta2) * exp(-residual);
     }
     prob = cumsum(prob);
-    double samp_prob = ((double)random()/RAND_MAX)*prob(K-1);
+    double sp_prob = ((double)random()/RAND_MAX)*prob(K-1);
     for (aspect=0; aspect<K; aspect++){
-        if (samp_prob>prob)
+        if (sp_prob>prob(aspect))
             break;
     }
     
@@ -787,9 +790,9 @@ int Model::inf_aspect_sampling(int review_idx, int term_idx){
         *(na_z[termid][i]+na_z_t[termid][i]+eta2)/(nasum_i[i]+nasum_i_t[i]+Veta2);
     }
     prob = cumsum(prob);
-    double samp_prob = ((double)random()/RAND_MAX)*prob(K-1);
+    double sp_prob = ((double)random()/RAND_MAX)*prob(K-1);
     for (aspect=0; aspect<K; aspect++){
-        if (samp_prob>prob)
+        if (sp_prob>prob(aspect))
             break;
     }
 
@@ -802,15 +805,14 @@ int Model::inf_aspect_sampling(int review_idx, int term_idx){
 }
 
 int Model::inf_rating_sampling(int review_idx, int term_idx){
-    int rating = ptstdata->reviews[review_idx]->r_s[term_idx]
+    int rating = ptstdata->reviews[review_idx]->r_s[term_idx];
     int aspect = ptstdata->reviews[review_idx]->z_ai[term_idx];
     int termid = ptstdata->reviews[review_idx]->sentimentid[term_idx];
     nd_kr_t[aspect][rating] -= 1;
     ns_r_t[termid][rating] -= 1;
-    nd_rk_t[set_idx][aspect] -= rating-1;
+    //nd_rk_t[set_idx][aspect] -= rating-1;
     nssum_t[rating] -= 1;
 
-    double tmp_eta0;
     double Reta1 = V_s*eta1;
     double Reta1_ps = Reta1 - ptstdata->nneg_seed*eta1;
     double Reta1_ns = Reta1 - ptstdata->npos_seed*eta1;
@@ -845,48 +847,51 @@ int Model::inf_rating_sampling(int review_idx, int term_idx){
         }
     }
     prob = cumsum(prob);
-    double samp_prob = ((double)random()/RAND_MAX)*prob(RL-1);
+    double sp_prob = ((double)random()/RAND_MAX)*prob(RL-1);
     for (rating=0; rating<RL; rating++){
-        if (samp_prob>prob)
+        if (sp_prob>prob(rating))
             break;
     }
 
     nd_kr_t[aspect][rating] += 1;
     ns_r_t[termid][rating] += 1;
-    nd_rk_t[set_idx][aspect] += rating-1;
+    //nd_rk_t[set_idx][aspect] += rating-1;
     nssum_t[rating] += 1;
     
     return rating;
 }
 
 void Model::sgd_bias_mf(){
-    rowvec user_grad = zeros<rowvec>(ndim);
-    rowvec item_grad = zeros<rowvec>(ndim);
-    vec rr = zeros<vec>(ptrndata->nR);
+    mat inter_result;
     int tmp_uid, tmp_iid;
     double pred_rating, user_bias_grad, item_bias_grad;
-
+    rowvec user_factor_grad = zeros<rowvec>(ndim);
+    rowvec item_factor_grad = zeros<rowvec>(ndim);
+    vec rr = zeros<vec>(ptrndata->nR);
+    
     for (int i=0; i<ptrndata->nR; i++)
         rr(i) = i;
 
     for (int i=0; i<niters_mf; i++){
         rr = shuffle(rr);
         for (int j=0; j<ptrndata->nR; j++){
-            tmp_uid = ptrndata->reviews[rr(j)]->userid;
-            tmp_iid = ptrndata->reviews[rr(j)]->itemid;
-            pred_rating = ptrndata->mf_rating(rr(j))
-                -user_factor.row(tmp_uid)*item_factor.row(tmp_idd).t()
-                -user_bias(tmp_uid)-item_bias(tmp_iid);
-            
+            tmp_uid = ptrndata->reviews[int(rr(j))]->userid;
+            tmp_iid = ptrndata->reviews[int(rr(j))]->itemid;
+            inter_result = user_factor.row(tmp_uid)*item_factor.row(tmp_iid).t();
+            pred_rating = ptrndata->mf_rating(int(rr(j)))
+                -inter_result(0,0)-user_bias(tmp_uid)-item_bias(tmp_iid);
+           
+            // compute gradient and update for user
             user_factor_grad = -item_factor.row(tmp_iid)*pred_rating;
-            user_factor.row(tmp_uid) -= lr(user_factor_grad+sigma_u*user_factor.row(tmp_uid));
+            user_factor.row(tmp_uid) -= lr*(user_factor_grad+sigma_u*user_factor.row(tmp_uid));
             user_bias_grad = -pred_rating;
-            user_bias(tmp_uid) -= lr(user_bias_grad+sigma_bias*user_bias(tmp_uid));
+            user_bias(tmp_uid) -= lr*(user_bias_grad+sigma_bias*user_bias(tmp_uid));
 
+            // compute gradient and update for item
             item_factor_grad = -user_factor.row(tmp_uid)*pred_rating;
-            item_factor.row(tmp_iid) -= lr(item_factor_grad+simga_i*item_factor.row(tmp_iid));
+            item_factor.row(tmp_iid) -= lr*(item_factor_grad+sigma_i*item_factor.row(tmp_iid));
             item_bias_grad = -pred_rating;
-            item_bias(tmp_uid) -= lr(item_bias_grad+sigma_bias*item_bias(tmp_uid));
+            item_bias(tmp_uid) -= lr*(item_bias_grad+sigma_bias*item_bias(tmp_uid));
         }
     }
 }
@@ -895,7 +900,7 @@ void Model::sgd_bias_mf(){
 void Model::compute_user_pseudo_aspect(){
     for (int i = 0; i < ptstdata->nR; i++){
         for (int k=0; k<K; k++){
-            user_pseudo_aspect(i, k) = float(nd_zu[i][k])/ndsum(i);
+            user_pseudo_aspect(i, k) = float(nd_zu[i][k])/ndsum[i];
         }
     }
 }
@@ -911,15 +916,16 @@ void Model::compute_item_pseudo_polarity(){
 void Model::compute_user_aspect(){
     int * tmp_zu = NULL;
     int tmp_sum = 0;
-    
-    for (int i=1; i<=nU; i+=){
+    int reviewidx;
+
+    for (int i=1; i<=nU; i++){
         tmp_zu = utils::alloc_vector(K);
         tmp_sum = 0;
         for (int j=0; j<users[i]->nreview; j++){
             reviewidx = users[i]->reviewidx_set[j];
-            for (int k=0; k<ptrndataset->reviews[reviewidx]->length; k++)
-                tmp_zu[ptrndataset->reviews[reviewidx]->z_au[k]]++;
-            tmp_sum += ptrndataset->reviews[reviewidx]->length;
+            for (int k=0; k<ptrndata->reviews[reviewidx]->length; k++)
+                tmp_zu[ptrndata->reviews[reviewidx]->z_au[k]]++;
+            tmp_sum += ptrndata->reviews[reviewidx]->length;
         }
         for (int j=0; j<K; j++)
             user_aspect(i, j) = float(tmp_zu[j])/tmp_sum;
@@ -929,15 +935,16 @@ void Model::compute_user_aspect(){
 void Model::compute_item_polarity(){
     int * tmp_ra = NULL;
     int * tmp_sum = NULL;
+    int reviewidx, tmp_aspect, tmp_polarity;
 
     for (int i=1; i<=nI; i++){
         tmp_ra = utils::alloc_vector(K);
         tmp_sum = utils::alloc_vector(K);
         for (int j=0; j<items[i]->nreview; j++){
             reviewidx = items[i]->reviewidx_set[j];
-            for (int k=0; k<ptrndataset->reviews[reviewidx]->length, k++){
-                tmp_aspect = ptrndataset->reviews[reviewidx]->z_ai[k];
-                tmp_polarity = ptrndataset->reviews[reviewidx]->r_s[k];
+            for (int k=0; k<ptrndata->reviews[reviewidx]->length; k++){
+                tmp_aspect = ptrndata->reviews[reviewidx]->z_ai[k];
+                tmp_polarity = ptrndata->reviews[reviewidx]->r_s[k];
                 tmp_ra[tmp_aspect] += tmp_polarity-1;   // rating offset
                 tmp_sum[tmp_aspect]++;
             }
@@ -1002,7 +1009,8 @@ void Model::compute_phi_t(){
     double Reta1 = V_s*eta1;
     double Reta1_ps = Reta1 - ptstdata->nneg_seed*eta1;
     double Reta1_ns = Reta1 - ptstdata->npos_seed*eta1;
-    
+    int tmp_seed;
+
     for (int i=0; i<RL; i++){
         for (int j=0; j<V_s; j++){
             tmp_seed = ptstdata->is_seed(j);
@@ -1060,14 +1068,14 @@ vec Model::get_item_vec(string dataseg, int userid){
 }
 
 double Model::eval_rmse(colvec real_rating, colvec pred_rating){
-    return sqrt(sum(pow((real_rating - pred_rating), 2))/pred_rating.n_rows());
+    return sqrt(sum(pow((real_rating - pred_rating), 2))/pred_rating.n_rows);
 }
 
 double Model::eval_corp_perp(const string dataseg, const string review_form){
     int wordnum = 0;
     double perp = 0.0;
    
-    if (data_seg == TRAIN_DATA){
+    if (dataseg == TRAIN_DATA){
         if (review_form == REVIEW_SET_FORM){
             printf("Need to be implemented.\n");
         }else if (review_form == REVIEW_SINGLE_FORM){
@@ -1077,7 +1085,7 @@ double Model::eval_corp_perp(const string dataseg, const string review_form){
             }
             perp = exp(-perp/wordnum);
         }
-    }else if (data_seg == TEST_DATA){
+    }else if (dataseg == TEST_DATA){
         for (int i=0; i<ptstdata->nR; i++){
             wordnum += 2*ptstdata->reviews[i]->length;
             perp += eval_doc_perp(i, dataseg);
@@ -1090,6 +1098,7 @@ double Model::eval_corp_perp(const string dataseg, const string review_form){
 
 double Model::eval_doc_perp(int idx, const string dataseg){
     if (dataseg == TRAIN_DATA){
+        mat inter_result;
         double doc_perp = 0.0;
         rowvec doc_aspect = zeros<rowvec>(K);
         for (int i=0; i<K; i++){
@@ -1101,10 +1110,12 @@ double Model::eval_doc_perp(int idx, const string dataseg){
         for (int i=0; i<ptrndata->reviews[idx]->length; i++){
             int tid = ptrndata->reviews[idx]->headtermid[i];
             int sid = ptrndata->reviews[idx]->sentimentid[i];
-            doc_perp += log(doc_aspect*(psai*phi.col(sid) + beta.col(tid)));
+            inter_result = doc_aspect*(psai*phi.col(sid) + beta.col(tid));
+            doc_perp += log(inter_result(0,0));
         }
         return doc_perp;
     }else if (dataseg == TEST_DATA){
+        mat inter_result;
         double doc_perp = 0.0;
         rowvec doc_aspect = zeros<rowvec>(K);
         for (int i=0; i<K; i++){
@@ -1116,9 +1127,13 @@ double Model::eval_doc_perp(int idx, const string dataseg){
         for (int i=0; i<ptstdata->reviews[idx]->length; i++){
             int tid = ptstdata->reviews[idx]->headtermid[i];
             int sid = ptstdata->reviews[idx]->sentimentid[i];
-            doc_perp += log(doc_aspect*(psai*phi.col(sid) + beta.col(tid)));
+            inter_result = doc_aspect*(psai_t*phi_t.col(sid) + beta_t.col(tid));
+            doc_perp += log(inter_result(0,0));
         }
         return doc_perp;
+    }else{
+        printf("Data segment choice error!\n");
+        exit(1);
     }
 }
 
@@ -1192,11 +1207,11 @@ int Model::save_model_spassign(){
                     ptrndata->reviews[i]->r_s[j]);
         }
         fprintf(fout_au, "%d:%d ", ptrndata->reviews[i]->headtermid[tmp_length-1],
-                ptrndata->reviews[i]->z_au[j]);
+                ptrndata->reviews[i]->z_au[tmp_length-1]);
         fprintf(fout_ai, "%d:%d ", ptrndata->reviews[i]->headtermid[tmp_length-1],
-                ptrndata->reviews[i]->z_ai[j]);
+                ptrndata->reviews[i]->z_ai[tmp_length-1]);
         fprintf(fout_ri, "%d:%d ", ptrndata->reviews[i]->headtermid[tmp_length-1],
-                ptrndata->reviews[i]->r_s[j]);
+                ptrndata->reviews[i]->r_s[tmp_length-1]);
     }
     fclose(fout_au);
     fclose(fout_ai);
@@ -1262,7 +1277,7 @@ int Model::load_model_hyperpara(){
     string model_hyperpara_file_path = model_dir[data_type] + model_hyperpara_file;
 
     FILE * fin = fopen(model_hyperpara_file_path.c_str(), "r");
-    if (!fout){
+    if (!fin){
         printf("Fail to load file %s!\n", model_hyperpara_file_path.c_str());
         return RET_ERROR_STATUS;
     }
@@ -1311,19 +1326,37 @@ int Model::load_model_spassign(){
     for (int i=0; i<ptrndata->nR; i++){
         tmp_length = ptrndata->reviews[i]->length;
         for (int j=0; j<tmp_length-1; j++){
-            fscanf(fin_au, "%d:%d", &ptrndata->reviews[i]->headtermid[j],
-                    &ptrndata->reviews[i]->z_au[j]);
-            fscanf(fin_ai, "%d:%d", &ptrndata->reviews[i]->headtermid[j],
-                    &ptrndata->reviews[i]->z_ai[j]);
-            fscanf(fin_ri, "%d:%d", &ptrndata->reviews[i]->headtermid[j],
-                    &ptrndata->reviews[i]->r_s[j]);
+            if (fscanf(fin_au, "%d:%d", &ptrndata->reviews[i]->headtermid[j],
+                    &ptrndata->reviews[i]->z_au[j])){
+                printf("Reading sampling results of training reviews error!\n");
+                return RET_ERROR_STATUS;
+            }
+            if (fscanf(fin_ai, "%d:%d", &ptrndata->reviews[i]->headtermid[j],
+                    &ptrndata->reviews[i]->z_ai[j])){
+                printf("Reading sampling results of training reviews error!\n");
+                return RET_ERROR_STATUS;
+            }
+            if (fscanf(fin_ri, "%d:%d", &ptrndata->reviews[i]->headtermid[j],
+                    &ptrndata->reviews[i]->r_s[j])){
+                printf("Reading sampling results of training reviews error!\n");
+                return RET_ERROR_STATUS;
+            }
         }
-        fscanf(fin_au, "%d:%d\n", &ptrndata->reviews[i]->headtermid[tmp_length-1],
-                &ptrndata->reviews[i]->z_au[j]);
-        fscanf(fin_ai, "%d:%d\n", &ptrndata->reviews[i]->headtermid[tmp_length-1],
-                &ptrndata->reviews[i]->z_ai[j]);
-        fscanf(fin_ri, "%d:%d\n", &ptrndata->reviews[i]->headtermid[tmp_length-1],
-                &ptrndata->reviews[i]->r_s[j]);
+        if (fscanf(fin_au, "%d:%d\n", &ptrndata->reviews[i]->headtermid[tmp_length-1],
+                &ptrndata->reviews[i]->z_au[tmp_length-1])){
+            printf("Reading sampling results of training reviews error!\n");
+            return RET_ERROR_STATUS;
+        }
+        if (fscanf(fin_ai, "%d:%d\n", &ptrndata->reviews[tmp_length-1]->headtermid[tmp_length-1],
+                &ptrndata->reviews[i]->z_ai[tmp_length-1])){
+            printf("Reading sampling results of training reviews error!\n");
+            return RET_ERROR_STATUS;
+        }
+        if (fscanf(fin_ri, "%d:%d\n", &ptrndata->reviews[tmp_length-1]->headtermid[tmp_length-1],
+                &ptrndata->reviews[i]->r_s[tmp_length-1])){
+            printf("Reading sampling results of training reviews error!\n");
+            return RET_ERROR_STATUS;
+        }
     }
     fclose(fin_au);
     fclose(fin_ai);
@@ -1344,7 +1377,7 @@ int Model::load_model_mf_para(){
     return RET_OK_STATUS;
 }
 
-int Model::save_model_as_para(){
+int Model::load_model_as_para(){
     string user_factor_file_path = model_dir[data_type] + model_user_factor_file;
     string user_bias_file_path = model_dir[data_type] + model_user_bias_file;
     string item_factor_file_path = model_dir[data_type] + model_item_factor_file;
@@ -1365,7 +1398,7 @@ int Model::save_rating(colvec rating, const string rating_file_path){
         return RET_ERROR_STATUS;
     }
 
-    for (int i=0; i<rating.n_rows; i++){
+    for (unsigned int i=0; i<rating.n_rows; i++){
         fprintf(fout, "%f\n", rating(i));
     }
     fclose(fout);
@@ -1373,6 +1406,14 @@ int Model::save_rating(colvec rating, const string rating_file_path){
     return RET_OK_STATUS;
 }
 
+void Model::tic(){
+    begin = clock();
+}
+
+float Model::toc(){
+    end = clock();
+    return (float)(end-begin)/CLOCKS_PER_SEC;
+}
 /*void Model::solve_regpara(){
 #ifdef LBFGS
 

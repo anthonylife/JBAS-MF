@@ -1,6 +1,6 @@
 #include "utils.h"
 
-vector<char *> utils::str_split(char * in_str, char sep){
+vector<char *> utils::split_str(char * in_str, char sep){
     vector<char *> str_seg;
     
     int str_len = strlen(in_str);
@@ -12,7 +12,7 @@ vector<char *> utils::str_split(char * in_str, char sep){
     for (int i = 0; i < str_len; i++){
         if(in_str[i] == sep){
             e_idx = i-1;
-            str_seg.push_back(utils::sub_str());
+            str_seg.push_back(utils::sub_str(s_idx, e_idx, in_str));
             s_idx = i+1;
         }
     }
@@ -21,8 +21,9 @@ vector<char *> utils::str_split(char * in_str, char sep){
 }
 
 char * utils::sub_str(int s_idx, int e_idx, char * raw_str){
-    char new_str[e_idx+1-s_idx+1];  // first +1: right number, second +1: "\0"
-    char * new_str = 
+    //char new_str[e_idx+1-s_idx+1];  // first +1: right number, second +1: "\0"
+    char * new_str = new char[e_idx+1-s_idx+1];
+    memset(new_str, 0, e_idx+1-s_idx+1);
 
     for (int i=s_idx; i <= e_idx; i++)
         new_str[i-s_idx] = raw_str[i];
@@ -42,7 +43,7 @@ vector<string> utils::split_str(string in_str, char sep){
     for (int i=0; i<length; i++){
         if(in_str[i] == sep){
             e_idx = i-1;
-            str_seg.push_back(in_str(s_idx, e_idx+1-s_idx));
+            str_seg.push_back(in_str.substr(s_idx, e_idx+1-s_idx));
             s_idx = i+1;
         }
     }
@@ -51,26 +52,32 @@ vector<string> utils::split_str(string in_str, char sep){
 }
 
 int utils::cnt_file_line(string in_file){
+    char * pointer = NULL;
+    
     FILE * fin = fopen(in_file.c_str(), "r");
     if (!fin) {
-	printf("Cannot open file %s to read!\n", in_file.c_str());
-	return RET_ERROR_STATUS;
+	    printf("Cannot open file %s to read!\n", in_file.c_str());
+	    return RET_ERROR_STATUS;
     }    
 
     int num_line = 0;
     char buff[BUFF_SIZE_LONG];
     while (!feof(fin)){
-        fgets(buff, BUFF_SIZE_LONG-1, fin);
+        pointer = fgets(buff, BUFF_SIZE_LONG-1, fin);
+        if (!pointer){
+            printf("Reading error for text file %s!\n", in_file.c_str());
+	        exit(1);
+        }
         num_line++;
     }
 
     return num_line;
 }
 
-int * utils:alloc_vector(int ndim){
+int * utils::alloc_vector(int ndim){
     int * tmp_vector = NULL;
     
-    tmp_vector = new int[ndim]
+    tmp_vector = new int[ndim];
     for (int i=0; i<ndim; i++){
         tmp_vector[i] = 0;
     }
@@ -105,11 +112,11 @@ mat utils::load_matrix(string file_path, int xdim, int ydim){
     char buff[BUFF_SIZE_LONG];
     while (fgets(buff, BUFF_SIZE_LONG-1, fin)){
         vector<char *> line_segments = split_str(buff, ' ');
-        if (line_segments.size() != ydim){
+        if (line_segments.size() != (unsigned int)ydim){
             printf("Dimension of latent factor can't match with model's.\n");
             exit(1);
         }
-        for (int i=0; i<line_segments.size(); i++)
+        for (unsigned int i=0; i<line_segments.size(); i++)
             tmp_mat(xidx+1, i) = atof(line_segments[i]);
         xidx++;
     }
@@ -138,20 +145,11 @@ colvec utils::load_colvec(string file_path, int ndim){
         xidx++;
     }
     
-    if (xidx != xdim){
+    if (xidx != ndim){
         printf("Number of rows can't match.\n");
         exit(1);
     }
 
     return tmp_colvec;
-}
-
-void utils::tic(){
-    begin = clock();
-}
-
-float utils::toc(){
-    end = clock();
-    return (float)(end-begin)/CLOCKS_PER_SEC;
 }
 
