@@ -4,10 +4,7 @@
  * description: the start function to run JBAS-MF model.
  */
 
-#include <iostream>
 #include "model.h"
-
-using namespace std;
 
 void show_help();
 
@@ -38,9 +35,9 @@ void show_help(){
             "COMMAND function includes:\n"
             "   -est     do model inference from scratch and getting model parameters\n"
             "   -estc    do model inference based on previous training results\n"
-            "   -pred    prediction on test data set\n"
+            "   -inf     inference on test data set\n"
             "   -debug   loading training and test data simultaneously\n"
             "\n"
-            "example: ./jbas_mf -est -dt <int> (data set choice) -pretrain (pretraining by bias latent factor model) -debug (loading training and test data)\n"
+            "example: ./jbas_mf -est -dt <int> (data set choice) -pretrain (pretraining by bias latent factor model)\n"
         );
 }

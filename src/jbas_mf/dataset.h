@@ -12,7 +12,6 @@
 //#include "model.h"
 #include "utils.h"
 
-using namespace std;
 using namespace std::tr1;
 
 // Corresponding the level of  training and test dataset, with user and
@@ -57,8 +56,8 @@ public:
     int nR;                 // number of reviews
     int npos_seed;          // number of positive seed words
     int nneg_seed;          // number of negative seed words
-    Review ** reviews;       // review instance array
-    //sp_mat rating_mat;      // rating sparse matrix of user/item
+    Review ** reviews;      // review instance array
+    //sp_mat rating_mat;    // rating sparse matrix of user/item
     colvec rating_vec;      // rating colvec
     colvec as_rating;       // rating of aspect sentiment part
     colvec mf_rating;       // rating of matrix factorization

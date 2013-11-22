@@ -104,6 +104,7 @@ int Dataset::read_user_data(string user_file, int &nU, UserItem ** users){
         }
         nR += temp_user->parse_user_line(buff);
         users[temp_user->id] = temp_user;
+        memset(buff, 0, BUFF_SIZE_LONG);
     }
     fclose(fin);
 
@@ -135,6 +136,7 @@ int Dataset::read_user_data(string user_file){
 	        return RET_ERROR_STATUS;
         }
         nR += temp_user->parse_user_line(buff);
+        memset(buff, 0, BUFF_SIZE_LONG);
     }
     fclose(fin);
 
@@ -173,6 +175,7 @@ int Dataset::read_item_data(string item_file, int &nI, UserItem ** items){
             reviewid2idx.insert(pair<int, int>(sub_reviews[j]->reviewid, st_review_idx+j));
             add_review(sub_reviews[j], st_review_idx+j);
         }
+        memset(buff, 0, BUFF_SIZE_LONG);
     }
     fclose(fin);
 
@@ -210,6 +213,7 @@ int Dataset::read_item_data(string item_file){
             reviewid2idx.insert(pair<int, int>(sub_reviews[j]->reviewid, st_review_idx+j));
             add_review(sub_reviews[j], st_review_idx+j);
         }
+        memset(buff, 0, BUFF_SIZE_LONG);
     }
     fclose(fin);
 
@@ -232,7 +236,8 @@ int Dataset::read_review_data(string review_file){
         return RET_ERROR_STATUS;
     }
     if (tmp_nR != nR){
-        printf("Review number read from review file do not match with the number read from user file.\n");
+        printf("Review number read from review file do not"
+                " match with the number read from user file.\n");
         return RET_ERROR_STATUS;
     }
 
@@ -270,6 +275,7 @@ int Dataset::read_review_data(string review_file){
         //reviews[review_idx].rating = atof(line_segments[3]);
         rating_vec[review_idx] = atof(line_segments[3]);
         //tmp_rating(reviews[review_idx].userid, reviews[review_idx].itemid) = atof(line_segments[3]);
+        memset(buff, 0, BUFF_SIZE_LONG);
     }
     //rating_mat = tmp_rating;
     fclose(fin);
@@ -346,6 +352,7 @@ int Dataset::read_seed_words(string seed_pos_file, string seed_neg_file){
 	        return RET_ERROR_STATUS;
         }
         pos_seed.insert(atoi(buff));
+        memset(buff, 0, BUFF_SIZE_LONG);
     }
     fclose(fin);
 
@@ -368,6 +375,7 @@ int Dataset::read_seed_words(string seed_pos_file, string seed_neg_file){
 	        return RET_ERROR_STATUS;
         }
         neg_seed.insert(atoi(buff));
+        memset(buff, 0, BUFF_SIZE_LONG);
     }
     fclose(fin);
 
@@ -469,8 +477,8 @@ vector<Review*> UserItem::parse_item_line(char * line){
         Review * review = new Review();
         int npair = subline_segments.size()-1;
         review->reviewid = atoi(subline_segments[0]);
-        review->headtermid = new int[npair];
-        review->sentimentid = new int[npair];
+        review->headtermid = new int[npair/2];
+        review->sentimentid = new int[npair/2];
         review->length = npair;
         for (int j=0; j<npair/2; j++){
             review->headtermid[j] = atoi(subline_segments[2*j+1]);

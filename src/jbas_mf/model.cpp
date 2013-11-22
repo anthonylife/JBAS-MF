@@ -5,8 +5,6 @@ void Model::set_default_values(){
     K       = 40;
     RL      = 3;
     eta0    = 1;
-    //eta1_ps = 0.001;
-    //eta1_ns = 0.001;
     eta1    = 0.001;
     eta2    = 0.1;
     alpha   = 0.1;  //50/K
@@ -111,7 +109,6 @@ void Model::set_default_values(){
 int Model::parse_args(int argc, char ** argv){
     int i = 0;
 
-    set_default_values();
     while (i < argc){
         string arg = argv[i];
 
@@ -125,7 +122,7 @@ int Model::parse_args(int argc, char ** argv){
             model_status = MODEL_STATUS_DEBUG;
         }else if (arg == "-dt"){
             data_type = atoi(argv[++i]);
-        }else if (arg == "-pretraining"){
+        }else if (arg == "-pretrain"){
             pretraining = true;
         }else{
             printf("Invalid command parameters.\n");
@@ -162,7 +159,7 @@ int Model::init_model(int argc, char ** argv){
         item_file_path = data_dir[data_type] + test_item_file;
         rating_file_path = data_dir[data_type] + test_rating_file;
     }else if (model_status == MODEL_STATUS_ESTC){
-        printf("Currently unavalible.\n");
+        printf("Need to be implemented!\n");
         exit(1);
     }
     
@@ -434,15 +431,15 @@ void Model::estimate(){
     prediction(TEST_DATA, EVAL_RMSE, false);
 #endif
     
+    // ---- learning regression parameters for initialization---- //
+    compute_as_rating(TRAIN_DATA);
+    mat hardmard_mat = user_pseudo_aspect%item_pseudo_polarity;
+    lambda = inv(sigma_reg_prior*eye<mat>(K+1, K+1) + hardmard_mat.t()*
+            hardmard_mat)*hardmard_mat.t()*ptrndata->as_rating;
+    
     for (int i=0; i<total_niters; i++){
         printf("Current iteration %d ...\r", i);
         
-        // ---- learning regression parameters ---- //
-        compute_as_rating(TRAIN_DATA);
-        mat hardmard_mat = user_pseudo_aspect%item_pseudo_polarity;
-        lambda = inv(sigma_reg_prior*eye<mat>(K+1, K+1) + hardmard_mat.t()*
-                hardmard_mat)*hardmard_mat.t()*ptrndata->as_rating;
-
         // ---- sampling parameters for aspect-sentiment topic model ---- //
         compute_as_rating(TRAIN_DATA);
         for (int ii=0; ii<niters_gibbs; i++){
@@ -481,6 +478,12 @@ void Model::estimate(){
         // ---- sgd for bias matrix factorization ---- //
         compute_mf_rating(TRAIN_DATA);
         sgd_bias_mf();
+        
+        // ---- learning regression parameters ---- //
+        compute_as_rating(TRAIN_DATA);
+        mat hardmard_mat = user_pseudo_aspect%item_pseudo_polarity;
+        lambda = inv(sigma_reg_prior*eye<mat>(K+1, K+1) + hardmard_mat.t()*
+                hardmard_mat)*hardmard_mat.t()*ptrndata->as_rating;
     }
 
 #ifdef CONT_DEBUG

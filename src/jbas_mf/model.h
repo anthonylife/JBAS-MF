@@ -29,11 +29,11 @@ class Model{
         double lr;      // learning rate of SGD
         double sigma_u; // inverse variance (precision), simplied by eye matrix 
         double sigma_i; // inverse variance (precision), simplied by eye matrix 
-        double sigma_bias;  // 
+        double sigma_bias;  // inverse variance (precision).
 
         // regression parameters
         double sigma_reg;   // variance
-        double sigma_reg_prior;     // inverse of variance
+        double sigma_reg_prior;     // regularization for regression parameter
 
         // training
         colvec lambda;      // model regression parameter

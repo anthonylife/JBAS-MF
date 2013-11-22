@@ -16,6 +16,8 @@ vector<char *> utils::split_str(char * in_str, char sep){
             s_idx = i+1;
         }
     }
+    if (s_idx < str_len)
+        str_seg.push_back(utils::sub_str(s_idx, str_len-1, in_str));
 
     return str_seg;
 }
@@ -25,7 +27,7 @@ char * utils::sub_str(int s_idx, int e_idx, char * raw_str){
     char * new_str = new char[e_idx+1-s_idx+1];
     memset(new_str, 0, e_idx+1-s_idx+1);
 
-    for (int i=s_idx; i <= e_idx; i++)
+    for (int i=s_idx; i<=e_idx; i++)
         new_str[i-s_idx] = raw_str[i];
 
     return new_str;
@@ -34,24 +36,27 @@ char * utils::sub_str(int s_idx, int e_idx, char * raw_str){
 vector<string> utils::split_str(string in_str, char sep){
     vector<string> str_seg;
     
-    int length = in_str.length();
-    if (in_str[length-1] == '\n')
-        length = length - 1;
+    int str_len = in_str.length();
+    if (in_str[str_len-1] == '\n')
+        str_len = str_len - 1;
     
     int s_idx, e_idx;
     s_idx = 0;
-    for (int i=0; i<length; i++){
+    for (int i=0; i<str_len; i++){
         if(in_str[i] == sep){
             e_idx = i-1;
             str_seg.push_back(in_str.substr(s_idx, e_idx+1-s_idx));
             s_idx = i+1;
         }
     }
+    if (s_idx < str_len)
+        str_seg.push_back(in_str.substr(s_idx, str_len-s_idx));
 
     return str_seg;
 }
 
 int utils::cnt_file_line(string in_file){
+    int num_line = 0;
     char * pointer = NULL;
     
     FILE * fin = fopen(in_file.c_str(), "r");
@@ -60,7 +65,6 @@ int utils::cnt_file_line(string in_file){
 	    return RET_ERROR_STATUS;
     }    
 
-    int num_line = 0;
     char buff[BUFF_SIZE_LONG];
     while (!feof(fin)){
         pointer = fgets(buff, BUFF_SIZE_LONG-1, fin);
@@ -68,7 +72,9 @@ int utils::cnt_file_line(string in_file){
             printf("Reading error for text file %s!\n", in_file.c_str());
 	        exit(1);
         }
-        num_line++;
+        if (strlen(buff)>0)
+            num_line++;
+        memset(buff, 0, BUFF_SIZE_LONG);
     }
 
     return num_line;
@@ -119,6 +125,7 @@ mat utils::load_matrix(string file_path, int xdim, int ydim){
         for (unsigned int i=0; i<line_segments.size(); i++)
             tmp_mat(xidx+1, i) = atof(line_segments[i]);
         xidx++;
+        memset(buff, 0, BUFF_SIZE_LONG);
     }
     
     if (xidx != xdim){
@@ -143,6 +150,7 @@ colvec utils::load_colvec(string file_path, int ndim){
     while (fgets(buff, BUFF_SIZE_LONG-1, fin)){
         tmp_colvec(xidx+1) = atof(buff);
         xidx++;
+        memset(buff, 0, BUFF_SIZE_LONG);
     }
     
     if (xidx != ndim){
