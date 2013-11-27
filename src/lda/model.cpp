@@ -564,11 +564,13 @@ void Model::inference(){
 
     printf("Sampling %d iterations for inference on testdata.\n", lda_iters_t);
     for (int i=0; i<lda_iters_t; i++){
+        printf("Current iteration %d ...\r ", i+1); fflush(stdout);
+        
         for (int j=0; j<ptstdata->nR; j++){
             for (int k=0; k<ptstdata->reviews[j]->length; k++){
-                topic_s = lda_sampling_s(j, k);
+                topic_s = lda_sampling_s_t(j, k);
                 ptstdata->reviews[j]->z_ai[k] = topic_s;
-                topic_a = lda_sampling_a(j, k);
+                topic_a = lda_sampling_a_t(j, k);
                 ptstdata->reviews[j]->z_au[k] = topic_a;
             }
         }
@@ -584,6 +586,14 @@ void Model::inference(){
                     cum_nd_t[k][j] += lda_nd_t[k][j];
             }
             burncnt_t++;
+        }
+    
+        if (i%10==0){
+            compute_beta_s_t();
+            compute_beta_a_t();
+            compute_alpha_t();
+            perp = compute_perp("test");
+            printf("Perplexity of test data is: %.4f\n", perp);
         }
     }
     printf("Gibbs sampling for inference completed.\n");
