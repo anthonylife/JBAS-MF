@@ -1,5 +1,6 @@
 #include "model.h"
 
+
 Model::~Model(){
     user_pseudo_aspect.clear();
     item_pseudo_polarity.clear();
@@ -1139,7 +1140,7 @@ void Model::compute_beta(){
 void Model::compute_psai_t(){
     for (int i=0; i<K; i++){
         for (int j=0; j<RL; j++){
-            psai(i, j) = (nd_kr[i][j]+nd_kr_t[i][j]+eta0)
+            psai_t(i, j) = (nd_kr[i][j]+nd_kr_t[i][j]+eta0)
                 /(nasum_i[i]+nasum_i_t[i]+RL*eta0);
         }
     }
@@ -1156,20 +1157,20 @@ void Model::compute_phi_t(){
             tmp_seed = ptstdata->is_seed(j);
             if (i==0){
                 if (tmp_seed==-1 || tmp_seed==0)
-                    phi(i, j) = (ns_r[j][i]+ns_r_t[j][i]+eta1)
+                    phi_t(i, j) = (ns_r[j][i]+ns_r_t[j][i]+eta1)
                         /(nssum[i]+nssum_t[i]+Reta1_ns);
                 else if (tmp_seed==1)
-                    phi(i, j) = (ns_r[j][i]+ns_r_t[j][i])
+                    phi_t(i, j) = (ns_r[j][i]+ns_r_t[j][i])
                         /(nssum[i]+nssum_t[i]+Reta1_ns);
             }else if (i==1){
-                phi(i, j) = (ns_r[j][i]+ns_r_t[j][i]+eta1)
+                phi_t(i, j) = (ns_r[j][i]+ns_r_t[j][i]+eta1)
                     /(nssum[i]+nssum_t[i]+Reta1);
             }else if (i==2){
                 if (tmp_seed==-1)
-                    phi(i, j) = (ns_r[j][i]+ns_r_t[j][i])
+                    phi_t(i, j) = (ns_r[j][i]+ns_r_t[j][i])
                         /(nssum[i]+nssum_t[i]+Reta1_ps);
                 else if (tmp_seed==0 || tmp_seed==1)
-                    phi(i, j) = (ns_r[j][i]+ns_r_t[j][i]+eta1)
+                    phi_t(i, j) = (ns_r[j][i]+ns_r_t[j][i]+eta1)
                         /(nssum[i]+nssum_t[i]+Reta1_ps);
             }
         }
@@ -1179,7 +1180,7 @@ void Model::compute_phi_t(){
 void Model::compute_beta_t(){
     for (int i=0; i<K; i++){
         for (int j=0; j<V_a; j++){
-            beta(i, j) = (na_z[j][i]+na_z_t[j][i]+eta2)/
+            beta_t(i, j) = (na_z[j][i]+na_z_t[j][i]+eta2)/
                 (nasum_i[i]+nasum_i_t[i]+V_a*eta2);
         }
     }
@@ -1288,8 +1289,8 @@ double Model::eval_doc_perp(int idx, const string dataseg){
             if (std::isnan(log(prob))){
                 cout << doc_aspect << endl;
                 cout << psai << endl;
-                cout << phi.col(sid) << endl;
-                cout << beta.col(tid) << endl;
+                cout << phi.col(sid).t() << endl;
+                cout << beta.col(tid).t() << endl;
                 utils::pause();
             }
             //doc_perp += log(inter_result(0,0));
@@ -1312,6 +1313,13 @@ double Model::eval_doc_perp(int idx, const string dataseg){
             for (int j=0; j<K; j++){
                 for (int k=0; k<RL; k++)
                     prob += doc_aspect(j)*psai_t(j,k)*phi_t(k,sid)*beta_t(j,tid);
+            }
+            if (std::isnan(log(prob))){
+                cout << doc_aspect << endl;
+                cout << psai_t << endl;
+                cout << phi_t.col(sid).t() << endl;
+                cout << beta_t.col(tid).t() << endl;
+                utils::pause();
             }
             doc_perp += log(prob);
         }

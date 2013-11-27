@@ -314,7 +314,6 @@ int Model::init_est(){
     lda_nd = utils::alloc_matrix(RW, K);
 
     // random aspect topic, rating assignments for each review
-    printf("haha.1\n");   fflush(stdout);
     srandom(time(0));
     for (int i=0; i<RW; i++){
         int len_rw = ptrndata->reviews[i]->length;
@@ -332,7 +331,6 @@ int Model::init_est(){
             lda_nd[i][aspect_topic_a]++;
         }
     }
-    printf("haha.2\n");   fflush(stdout);
 
     return RET_OK_STATUS;
 }
@@ -601,6 +599,7 @@ void Model::inference(){
         }
     
         if (i%10==0){
+            printf("\n");
             compute_beta_s_t();
             compute_beta_a_t();
             compute_alpha_t();
@@ -684,13 +683,17 @@ int Model::lda_sampling_a_t(int reviewidx, int termidx){
 void Model::compute_beta_s_t(){
     for (int i=0; i<K; i++){
         for (int j=0; j<V_s; j++){
-            if (burntag){
+            /*if (burntag){
                 lda_beta_s_t(i,j) = (cum_nw_s[j][i]+cum_nw_s_t[j][i]+lda_beta)/
                     (cum_nwsum_s[i]+cum_nwsum_s_t[i]+V_s*lda_beta);
             }else{
                 lda_beta_s_t(i,j) = (lda_nw_s[j][i]+lda_nw_s_t[j][i]+lda_beta)/
                     (lda_nwsum_s[i]+lda_nwsum_s_t[i]+V_s*lda_beta);
-            }
+            }*/
+            /*lda_beta_s_t(i,j) = (lda_nw_s_t[j][i]+lda_beta)/
+                (lda_nwsum_s_t[i]+V_s*lda_beta);*/
+            lda_beta_s_t(i,j) = (lda_nw_s[j][i]+lda_nw_s_t[j][i]+lda_beta)/
+                (lda_nwsum_s[i]+lda_nwsum_s_t[i]+V_s*lda_beta);
         }
     }
 }
@@ -698,13 +701,17 @@ void Model::compute_beta_s_t(){
 void Model::compute_beta_a_t(){
     for (int i=0; i<K; i++){
         for (int j=0; j<V_a; j++){
-            if (burntag){
+            /*if (burntag){
                 lda_beta_a_t(i,j) = (cum_nw_a[j][i]+cum_nw_a_t[j][i]+lda_beta)/
                     (cum_nwsum_a[i]+cum_nwsum_a_t[i]+V_a*lda_beta);
             }else{
                 lda_beta_a_t(i,j) = (lda_nw_a[j][i]+lda_nw_a_t[j][i]+lda_beta)/
                     (lda_nwsum_a[i]+lda_nwsum_a_t[i]+V_a*lda_beta);
-            }
+            }*/
+            /*lda_beta_a_t(i,j) = (lda_nw_a_t[j][i]+lda_beta)/
+                (lda_nwsum_a_t[i]+V_a*lda_beta);*/
+            lda_beta_a_t(i,j) = (lda_nw_a[j][i]+lda_nw_a_t[j][i]+lda_beta)/
+                (lda_nwsum_a[i]+lda_nwsum_a_t[i]+V_a*lda_beta);
         }
     }
 }
@@ -712,13 +719,15 @@ void Model::compute_beta_a_t(){
 void Model::compute_alpha_t(){
     for (int i=0; i<RW_t; i++){
         for (int j=0; j<K; j++){
-            if (burntag){
+            /*if (burntag){
                 lda_alpha_r_t(i,j) = (cum_nd_t[i][j]+lda_alpha)/
                     (burncnt_t*2*ptstdata->reviews[i]->length+K*lda_alpha);
             }else{
                 lda_alpha_r_t(i,j)  = (lda_nd_t[i][j]+lda_alpha)/
                     (2*ptstdata->reviews[i]->length+K*lda_alpha);
-            }
+            }*/
+            lda_alpha_r_t(i,j)  = (lda_nd_t[i][j]+lda_alpha)/
+                (2*ptstdata->reviews[i]->length+K*lda_alpha);
         }
     }
 }
