@@ -236,6 +236,14 @@ class Model{
         clock_t begin, end;
         void tic();         // start timer
         float toc();        // end timer and output time of duration
+    
+        //********for the next step learning*********
+        string user_aspect_file;
+        string item_polarity_file;
+        void save_results();
+        int output_user_aspect(string file_path);
+        int output_item_polarity(string file_path);
+
 };
 
 double Model::rating_prediction(int uid, int iid, colvec aspect, colvec polarity){

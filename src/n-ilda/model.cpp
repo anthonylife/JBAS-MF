@@ -27,7 +27,7 @@ Model::~Model(){
 void Model::set_default_values(){
     // ----- Topic model part of our model ----- //
     K       = 10;
-    RL      = 20;
+    RL      = 10;
     eta0    = 0.1;
     eta1    = 1;
     eta2    = 0.1;
@@ -137,6 +137,10 @@ void Model::set_default_values(){
     rating_output_file[0] = "cellar_jbasmf_rating.dat";
     rating_output_file[1] = "movie_jbasmf_rating.dat";
     rating_output_file[2] = "food_jbasmf_rating.dat";
+    
+    //********for the next step learning*********
+    user_aspect_file = "ilda_user_aspect.dat";
+    item_polarity_file = "ilda_item_polarity.dat";
 }
 
 
@@ -372,7 +376,7 @@ void Model::estimate(){
     printf("Before training, perplexity of train data is: %.4f\n", perp);
 
     for (int i=0; i<niters_gibbs; i++){
-        printf("Current iteration %d ...\n", i+1);  fflush(stdout);
+        printf("Current iteration %d ...", i+1);  fflush(stdout);
     
         for (int j=0; j<RW; j++){
             for (int k=0; k<ptrndata->reviews[j]->length; k++){
@@ -398,6 +402,9 @@ void Model::estimate(){
     compute_beta();
     perp = prediction(TRAIN_DATA, EVAL_PERPLEXITY, false);
     printf("Perplexity of train data is: %.4f\n", perp);
+    
+    // for the next step learning
+    save_results();
 
     if (model_status == MODEL_STATUS_DEBUG){
         inference();
@@ -1517,6 +1524,81 @@ float Model::toc(){
     end = clock();
     return (float)(end-begin)/CLOCKS_PER_SEC;
 }
+
+void Model::save_results(){
+    string user_aspect_file_path = data_dir[data_type]+user_aspect_file;
+    string item_polarity_file_path = data_dir[data_type]+item_polarity_file;
+
+    output_user_aspect(user_aspect_file_path);
+    output_item_polarity(item_polarity_file_path);
+}
+
+int Model::output_user_aspect(string file_path){
+    FILE * fout = fopen(file_path.c_str(), "w");
+    if (!fout) {
+	    printf("Cannot create file %s to write!\n", file_path.c_str());
+	    return RET_ERROR_STATUS;
+    }    
+    
+    int reviewidx, aspect;
+    vec user_aspect = zeros<vec>(K);
+    for (int i=1; i<=nU; i++){
+        user_aspect.zeros();
+        for (int j=0; j<users[i]->nreview; j++){
+            reviewidx = users[i]->reviewidx_set(j);
+            for (int k=0; k<ptrndata->reviews[reviewidx]->length; k++){
+                aspect = ptrndata->reviews[reviewidx]->z_ai[k];
+                user_aspect(aspect) += 1;
+            }
+        }
+        user_aspect = user_aspect/sum(user_aspect);
+        for (int j=0; j<K-1; j++)
+            fprintf(fout, "%f ", user_aspect(j));
+        fprintf(fout, "%f\n", user_aspect(K-1));
+    }
+    fclose(fout);
+
+    return RET_OK_STATUS;
+}
+
+int Model::output_item_polarity(string file_path){
+    FILE * fout = fopen(file_path.c_str(), "w");
+    if (!fout) {
+	    printf("Cannot create file %s to write!\n", file_path.c_str());
+	    return RET_ERROR_STATUS;
+    }    
+
+    int reviewidx, aspect, polarity;
+    mat item_polarity = zeros<mat>(K, RL);
+    for (int i=1; i<=nI; i++){
+        item_polarity.zeros();
+        for (int j=0; j<items[i]->nreview; j++){
+            reviewidx = items[i]->reviewidx_set(j);
+            for (int k=0; k<ptrndata->reviews[reviewidx]->length; k++){
+                aspect = ptrndata->reviews[reviewidx]->z_ai[k];
+                polarity = ptrndata->reviews[reviewidx]->r_s[k];
+                item_polarity(aspect, polarity) += 1;
+            }
+        }
+        for (int j=0; j<K; j++){
+            if (sum(item_polarity.row(j)) != 0)
+                item_polarity.row(j) = item_polarity.row(j)/
+                    sum(item_polarity.row(j));
+            else
+                item_polarity.row(j).zeros();
+        }
+        for (int j=0; j<K; j++){
+            for (int k=0; k<RL; k++){
+                fprintf(fout, "%f ", item_polarity(j,k));
+            }
+        }
+        fprintf(fout, "\n");
+    }
+    fclose(fout);
+    
+    return RET_OK_STATUS;
+}
+
 /*void Model::solve_regpara(){
 #ifdef LBFGS
 
