@@ -30,9 +30,8 @@ void Model::set_default_values(){
     eta0    = 0.1;
     eta1    = 1;
     eta2    = 0.1;
-    beta    = 0.1;  //50/K
-    alpha   = double(50)/K;
-
+    alpha   = 50.0/K;  //50/K
+    
     // ----- Matrix factorization part of our model ----- //
     ndim      = 40;
     lr        = 0.05;
@@ -60,9 +59,9 @@ void Model::set_default_values(){
     nasum_i  = NULL;
     nssum    = NULL;
     total_niters  = 10;
-    niters_gibbs = 100;
+    niters_gibbs = 2000;
     niters_mf = 200;
-    nburn = 500;
+    nburn = 1000;
     saved_step = 5;
 
     ptstdata = NULL;
@@ -77,7 +76,7 @@ void Model::set_default_values(){
     nasum_u_t  = NULL;
     nasum_i_t  = NULL;
     nssum_t  = NULL;
-    niters_t = 100;
+    niters_t = 1000;
     
     users = NULL;
     items = NULL;
@@ -137,35 +136,9 @@ void Model::set_default_values(){
     rating_output_file[0] = "cellar_jbasmf_rating.dat";
     rating_output_file[1] = "movie_jbasmf_rating.dat";
     rating_output_file[2] = "food_jbasmf_rating.dat";
-
-    //***************For LDA******************
-    lda_alpha = 50.0/K;
-    lda_beta  = 0.1;
-    
-    lda_nwsum_s = NULL;
-    lda_nwsum_a = NULL;
-    lda_nw_s = NULL;
-    lda_nw_a = NULL;
-    lda_nd = NULL;
-    
-    lda_nwsum_s_t = NULL;
-    lda_nwsum_a_t = NULL;
-    lda_nw_s_t = NULL;
-    lda_nw_a_t = NULL;
-    lda_nd_t = NULL;
-    
-    lda_iters = 2000;
-    lda_saveiter = 1500;
-    lda_savestep = 20;
-    lda_iters_t = 1000;
-    lda_saveiter_t = 500;
-    lda_savestep_t = 20;
-    burntag = false;
-    burncnt = 0;
-    burncnt_t = 0;
-    //****************************************
-
 }
+
+
 
 int Model::parse_args(int argc, char ** argv){
     int i = 0;
@@ -193,8 +166,6 @@ int Model::parse_args(int argc, char ** argv){
             sigma_i = atof(argv[++i]);
         }else if (arg == "-ub"){
             sigma_bias = atof(argv[++i]);
-        }else if (arg == "-burn"){
-            burntag = true;
         }else{
             //printf("Invalid command parameters.\n");
             //return RET_ERROR_STATUS;
@@ -246,11 +217,6 @@ int Model::init_model(int argc, char ** argv){
         psai = zeros<mat>(K, RL);
         phi  = zeros<mat>(RL, V_s);
         beta = zeros<mat>(K, V_a);
-        
-        //***************For LDA******************
-        lda_beta_s = zeros<mat>(K, V_s);
-        lda_beta_a = zeros<mat>(K, V_a);
-        lda_alpha_r = zeros<mat>(RW, K);
     }else if (model_status == MODEL_STATUS_INF){
         ptstdata = new Dataset();
         ptstdata->read_data(user_file_path, item_file_path, rating_file_path);
@@ -261,11 +227,6 @@ int Model::init_model(int argc, char ** argv){
         psai_t = zeros<mat>(K, RL);
         phi_t  = zeros<mat>(RL, V_s);
         beta_t = zeros<mat>(K, V_a);
-        
-        //***************For LDA******************
-        lda_beta_s_t = zeros<mat>(K, V_s);
-        lda_beta_a_t = zeros<mat>(K, V_a);
-        lda_alpha_r_t = zeros<mat>(RW_t, K);
     }
     if (model_status == MODEL_STATUS_DEBUG){
         user_file_path = data_dir[data_type] + test_user_file;
@@ -278,15 +239,9 @@ int Model::init_model(int argc, char ** argv){
         psai_t = zeros<mat>(K, RL);
         phi_t  = zeros<mat>(RL, V_s);
         beta_t = zeros<mat>(K, V_a);
-        
-        //***************For LDA******************
-        lda_beta_s_t = zeros<mat>(K, V_s);
-        lda_beta_a_t = zeros<mat>(K, V_a);
-        lda_alpha_r_t = zeros<mat>(RW_t, K);
     }
 
     // estimating the model from scratch
-    printf("haha\n");   fflush(stdout);
     if (model_status == MODEL_STATUS_EST){
         init_est();
     }else if (model_status == MODEL_STATUS_ESTC){
@@ -300,45 +255,53 @@ int Model::init_model(int argc, char ** argv){
         printf("Model status error.\n");
         return RET_ERROR_STATUS;
     }
-    printf("haha1\n");   fflush(stdout);
 
     return RET_OK_STATUS;
 }
 
 int Model::init_est(){
-    //***************For LDA******************
-    lda_nwsum_s = utils::alloc_vector(K);
-    lda_nwsum_a = utils::alloc_vector(K);
-    lda_nw_s = utils::alloc_matrix(V_s, K);
-    lda_nw_a = utils::alloc_matrix(V_a, K);
-    lda_nd = utils::alloc_matrix(RW, K);
-
+    // allocation for estimation variables
+    nssum = utils::alloc_vector(RL);
+    nasum_i = utils::alloc_vector(K);
+    nd_zi = utils::alloc_matrix(RW, K);
+    nd_kr = utils::alloc_matrix(K, RL);
+    na_z = utils::alloc_matrix(V_a, K);
+    ns_r = utils::alloc_matrix(V_s, RL);
+    
     // random aspect topic, rating assignments for each review
-    printf("haha.1\n");   fflush(stdout);
     srandom(time(0));
     for (int i=0; i<RW; i++){
         int len_rw = ptrndata->reviews[i]->length;
         for (int j=0; j<len_rw; j++){
-            int aspect_topic_s = (int)(((double)random()/RAND_MAX) * K);
-            int aspect_topic_a = (int)(((double)random()/RAND_MAX) * K);
-            ptrndata->reviews[i]->z_ai[j] = aspect_topic_s;
-            ptrndata->reviews[i]->z_au[j] = aspect_topic_a;
-        
-            lda_nwsum_s[aspect_topic_s]++;
-            lda_nwsum_a[aspect_topic_a]++;
-            lda_nw_s[ptrndata->reviews[i]->sentimentid[j]][aspect_topic_s]++;
-            lda_nw_a[ptrndata->reviews[i]->headtermid[j]][aspect_topic_a]++;
-            lda_nd[i][aspect_topic_s]++;
-            lda_nd[i][aspect_topic_a]++;
+            int aspect_topic_i = (int)(((double)random()/RAND_MAX) * K);
+            int rating_level = (int)(((double)random()/RAND_MAX) * RL);
+            ptrndata->reviews[i]->z_ai[j] = aspect_topic_i;
+            nasum_i[aspect_topic_i] += 1;
+            na_z[ptrndata->reviews[i]->headtermid[j]][aspect_topic_i] += 1;
+            nd_zi[i][aspect_topic_i] += 1;
+
+#ifdef USE_SENTI_SET
+            int tmp_level = ptrndata->is_seed(ptrndata->reviews[i]->sentimentid[j]);
+            if (tmp_level)
+                rating_level = tmp_level+1;
+            ptrndata->reviews[i]->r_s[j] = rating_level;
+#else
+            ptrndata->reviews[i]->r_s[j] = rating_level;
+#endif
+            nssum[rating_level] += 1;
+            ns_r[ptrndata->reviews[i]->sentimentid[j]][rating_level] += 1;
+            nd_kr[aspect_topic_i][rating_level] += 1;
         }
     }
-    printf("haha.2\n");   fflush(stdout);
-
+    
     return RET_OK_STATUS;
 }
 
 void Model::init_topic_rating(){
-    printf("haha\n");
+    user_aspect = ones<mat>(nU+1, K+1);
+    item_polarity = ones<mat>(nI+1, K+1);
+    user_pseudo_aspect = ones<mat>(ptrndata->nR, K+1);
+    item_pseudo_polarity = ones<mat>(ptrndata->nR, K+1);
 }
 
 void Model::rinit_factor(){
@@ -372,140 +335,106 @@ void Model::init_estc(){
     printf("Function init_est() needs to be implemented.\n");
 }
 
-void Model::init_inf(){
-    if (model_status == MODEL_STATUS_INF)
-        load_model();
-    
-    lda_nwsum_s_t = utils::alloc_vector(K);
-    lda_nwsum_a_t = utils::alloc_vector(K);
-    lda_nw_s_t = utils::alloc_matrix(V_s, K);
-    lda_nw_a_t = utils::alloc_matrix(V_a, K);
-    lda_nd_t = utils::alloc_matrix(RW_t, K);
+int Model::init_inf(){
+    // allocation for estimation variables
+    nssum_t = utils::alloc_vector(RL);
+    nasum_i_t = utils::alloc_vector(K);
+    nd_zi_t = utils::alloc_matrix(RW_t, K);
+    nd_kr_t = utils::alloc_matrix(K, RL);
+    na_z_t = utils::alloc_matrix(V_a, K);
+    ns_r_t = utils::alloc_matrix(V_s, RL);
     
     // random aspect topic, rating assignments for each review
     srandom(time(0));
     for (int i=0; i<RW_t; i++){
         int len_rw = ptstdata->reviews[i]->length;
         for (int j=0; j<len_rw; j++){
-            int aspect_topic_s = (int)(((double)random()/RAND_MAX) * K);
-            int aspect_topic_a = (int)(((double)random()/RAND_MAX) * K);
-            ptstdata->reviews[i]->z_ai[j] = aspect_topic_s;
-            ptstdata->reviews[i]->z_au[j] = aspect_topic_a;
-        
-            lda_nwsum_s_t[aspect_topic_s]++;
-            lda_nwsum_a_t[aspect_topic_a]++;
-            lda_nw_s_t[ptstdata->reviews[i]->sentimentid[j]][aspect_topic_s]++;
-            lda_nw_a_t[ptstdata->reviews[i]->headtermid[j]][aspect_topic_a]++;
-            lda_nd_t[i][aspect_topic_s]++;
-            lda_nd_t[i][aspect_topic_a]++;
+            int aspect_topic_i = (int)(((double)random()/RAND_MAX) * K);
+            int rating_level = (int)(((double)random()/RAND_MAX) * RL);
+            ptstdata->reviews[i]->z_ai[j] = aspect_topic_i;
+            nasum_i_t[aspect_topic_i] += 1;
+            na_z_t[ptstdata->reviews[i]->headtermid[j]][aspect_topic_i] += 1;
+            nd_zi_t[i][aspect_topic_i] += 1;
+
+#ifdef USE_SENTI_SET
+            int tmp_level = ptstdata->is_seed(ptrndata->reviews[i]->sentimentid[j]);
+            if (tmp_level)
+                rating_level = tmp_level+1;
+            ptstdata->reviews[i]->r_s[j] = rating_level;
+#else
+            ptstdata->reviews[i]->r_s[j] = rating_level;
+#endif
+            nssum_t[rating_level] += 1;
+            ns_r_t[ptstdata->reviews[i]->sentimentid[j]][rating_level] += 1;
+            nd_kr_t[aspect_topic_i][rating_level] += 1;
         }
     }
+    
+    return RET_OK_STATUS;
 }
 
 void Model::estimate(){
-    double perp;
-    int topic_s, topic_a;
-
-    printf("Total sampling %d iterations.\n", lda_iters);
-    compute_beta_s();
-    compute_beta_a();
-    compute_alpha();
-    perp = compute_perp("train");
-    printf("Before training, perplexity of training data: %.4f!\n", perp);
+    double rmse, perp;
+    int sp_aspect, sp_rating;
     
-    for (int i=0; i<lda_iters; i++){
-        printf("Current iteration %d ...\r ", i+1); fflush(stdout);
-       
+    printf("Sampling %d iterations for inference on traindata.\n", niters_t);
+    compute_psai();
+    compute_phi();
+    compute_beta();
+    perp = prediction(TRAIN_DATA, EVAL_PERPLEXITY, false);
+    printf("Before training, perplexity of train data is: %.4f\n", perp);
+
+    for (int i=0; i<niters_gibbs; i++){
+        printf("Current iteration %d ...\r", i+1);  fflush(stdout);
+    
         for (int j=0; j<RW; j++){
             for (int k=0; k<ptrndata->reviews[j]->length; k++){
-                topic_s = lda_sampling_s(j, k);
-                ptrndata->reviews[j]->z_ai[k] = topic_s;
-                topic_a = lda_sampling_a(j, k);
-                ptrndata->reviews[j]->z_au[k] = topic_a;
+                sp_aspect = ilda_sampling_a(j, k);
+                ptrndata->reviews[j]->z_ai[k] = sp_aspect;
+                sp_rating = ilda_sampling_r(j, k);
+                ptrndata->reviews[j]->r_s[k] = sp_rating;
             }
         }
-        
-        if (burntag and i > lda_saveiter and i % lda_savestep==0){
-            for (int j=0; j<K; j++){
-                cum_nwsum_s[j] += lda_nwsum_s[j];
-                cum_nwsum_a[j] += lda_nwsum_a[j];
-                for (int k=0; k<V_s; k++)
-                    cum_nw_s[k][j] += lda_nw_s[k][j];
-                for (int k=0; k<V_a; k++)
-                    cum_nw_a[k][j] += lda_nw_a[k][j];
-                for (int k=0; k<RW; k++)
-                    cum_nd[k][j] += lda_nd[k][j];
-            }
-            burncnt++;
+
+        if (i%10 == 0){
+            compute_psai();
+            compute_phi();
+            compute_beta();
+            perp = prediction(TRAIN_DATA, EVAL_PERPLEXITY, false);
+            printf("Perplexity of train data is: %.4f\n", perp);
         }
-        
-        if (i % 10 == 0){
-            printf("\n");
-            compute_beta_s();
-            compute_beta_a();
-            compute_alpha();
-            perp = compute_perp("train");
-            printf("Perplexity of training data: %.4f!\n", perp);
-        }
-    }
+    } 
     
-    compute_beta_s();
-    compute_beta_a();
-    compute_alpha();
-    perp = compute_perp("train");
-    printf("Perplexity of training data: %.4f!\n", perp);
+    printf("ILDA Gibbs sampling for training data finished!\n");
+    compute_psai();
+    compute_phi();
+    compute_beta();
+    perp = prediction(TRAIN_DATA, EVAL_PERPLEXITY, false);
+    printf("Perplexity of train data is: %.4f\n", perp);
 
     if (model_status == MODEL_STATUS_DEBUG){
         inference();
     }
 }
 
-int Model::lda_sampling_s(int reviewidx, int termidx){
+int Model::ilda_sampling_a(int reviewidx, int termidx){
     int topic = ptrndata->reviews[reviewidx]->z_ai[termidx];
-    int sentimentid = ptrndata->reviews[reviewidx]->sentimentid[termidx];
-
-    lda_nwsum_s[topic] -= 1;
-    lda_nw_s[sentimentid][topic] -= 1;
-    lda_nd[reviewidx][topic] -= 1;
-
-    double Vbeta = V_s*lda_beta;
-    double Kalpha = K*lda_alpha;
-    vec prob = zeros<vec>(K);
-
-    for (int i=0; i<K; i++){
-        prob(i) = (lda_nd[reviewidx][i]+lda_alpha)*
-            (lda_nw_s[sentimentid][i]+lda_beta)/(lda_nwsum_s[i]+Vbeta);
-    }
-    prob = cumsum(prob);
-
-    double sp_prob = ((double)random()/RAND_MAX)*prob(K-1);
-    for (topic=0; topic<K; topic++){
-        if (prob(topic)>sp_prob)
-            break;
-    }
-    
-    lda_nwsum_s[topic] += 1;
-    lda_nw_s[sentimentid][topic] += 1;
-    lda_nd[reviewidx][topic] += 1;
-
-    return topic;
-}
-
-int Model::lda_sampling_a(int reviewidx, int termidx){
-    int topic = ptrndata->reviews[reviewidx]->z_au[termidx];
+    int rating = ptrndata->reviews[reviewidx]->r_s[termidx];
     int headtermid = ptrndata->reviews[reviewidx]->headtermid[termidx];
 
-    lda_nwsum_a[topic] -= 1;
-    lda_nw_a[headtermid][topic] -= 1;
-    lda_nd[reviewidx][topic] -= 1;
-
-    double Vbeta = V_s*lda_beta;
-    double Kalpha = K*lda_alpha;
+    nasum_i[topic] -= 1;
+    nd_zi[reviewidx][topic] -= 1;
+    nd_kr[topic][rating] -= 1;
+    na_z[headtermid][topic] -= 1;
+  
+    double Reta0 = RL*eta0;
+    double Veta2 = V_a*eta2;
     vec prob = zeros<vec>(K);
 
     for (int i=0; i<K; i++){
-        prob(i) = (lda_nd[reviewidx][i]+lda_alpha)*
-            (lda_nw_a[headtermid][i]+lda_beta)/(lda_nwsum_a[i]+Vbeta);
+        prob(i) = (nd_zi[reviewidx][i]+alpha) *
+            (nd_kr[i][rating]+eta0)/(nasum_i[i]+Reta0) *
+            (na_z[headtermid][i]+eta2)/(nasum_i[i]+Veta2);
     }
     prob = cumsum(prob);
 
@@ -515,296 +444,97 @@ int Model::lda_sampling_a(int reviewidx, int termidx){
             break;
     }
     
-    lda_nwsum_a[topic] += 1;
-    lda_nw_a[headtermid][topic] += 1;
-    lda_nd[reviewidx][topic] += 1;
-    
+    nasum_i[topic] += 1;
+    nd_zi[reviewidx][topic] += 1;
+    nd_kr[topic][rating] += 1;
+    na_z[headtermid][topic] += 1;
+
     return topic;
 }
 
-void Model::compute_beta_s(){
-    for (int i=0; i<K; i++){
-        for (int j=0; j<V_s; j++){
-            if (burntag){
-                lda_beta_s(i,j) = (cum_nw_s[j][i]+lda_beta)/
-                    (cum_nwsum_s[i]+V_s*lda_beta);
-            }else{
-                lda_beta_s(i,j) = (lda_nw_s[j][i]+lda_beta)/
-                    (lda_nwsum_s[i]+V_s*lda_beta);
-            }
-        }
-    }
-}
-
-void Model::compute_beta_a(){
-    for (int i=0; i<K; i++){
-        for (int j=0; j<V_a; j++){
-            if (burntag){
-                lda_beta_a(i,j) = (cum_nw_a[j][i]+lda_beta)/
-                    (cum_nwsum_a[i]+V_a*lda_beta);
-            }else{
-                lda_beta_a(i,j) = (lda_nw_a[j][i]+lda_beta)/
-                    (lda_nwsum_a[i]+V_a*lda_beta);
-            }
-        }
-    }
-}
+int Model::ilda_sampling_r(int reviewidx, int termidx){
+    int topic = ptrndata->reviews[reviewidx]->z_ai[termidx];
+    int rating = ptrndata->reviews[reviewidx]->r_s[termidx];
+    int sentimentid = ptrndata->reviews[reviewidx]->sentimentid[termidx];
     
-void Model::compute_alpha(){
-    for (int i=0; i<RW; i++){
-        for (int j=0; j<K; j++){
-            if (burntag){
-                lda_alpha_r(i,j) = (cum_nd[i][j]+lda_alpha)/
-                    (burncnt*2*ptrndata->reviews[i]->length+K*lda_alpha);
-            }else{
-                lda_alpha_r(i,j)  = (lda_nd[i][j]+lda_alpha)/
-                    (2*ptrndata->reviews[i]->length+K*lda_alpha);
-            }
-        }
+    int tmp_level = ptrndata->is_seed(sentimentid)+1;
+    //if (!tmp_level)
+    //    return rating;
+
+    nssum[rating] -= 1;
+    nd_kr[topic][rating] -= 1;
+    ns_r[sentimentid][rating] -= 1;
+
+    double Veta1 = V_s*eta1;
+    double Veta1_pos = (V_s-ptrndata->nneg_seed)*eta1;
+    double Veta1_neg = (V_s-ptrndata->npos_seed)*eta1;
+    vec prob = zeros<vec>(RL);
+    for (int i=0; i<RL; i++){
+        if (i==0){
+            prob(i) = (nd_kr[topic][i]+eta0) *
+                (ns_r[sentimentid][i]+eta1)/(nssum[i]+Veta1_neg);
+            if (tmp_level==2)
+                prob(i) -= eta0*(ns_r[sentimentid][i]+eta1)/(nssum[i]+Veta1_neg);
+        }else if (i==2){
+            prob(i) = (nd_kr[topic][i]+eta0) *
+                (ns_r[sentimentid][i]+eta1)/(nssum[i]+Veta1_pos);
+            if (tmp_level==0) 
+                prob(i) -= eta0*(ns_r[sentimentid][i]+eta1)/(nssum[i]+Veta1_pos);
+        }else
+            prob(i) = (nd_kr[topic][i]+eta0) *
+                (ns_r[sentimentid][i]+eta1)/(nssum[i]+Veta1);
     }
+    prob = cumsum(prob);
+
+    double sp_prob = ((double)random()/RAND_MAX)*prob(RL-1);
+    for (rating=0; rating<RL; rating++){
+        if (prob(rating)>sp_prob)
+            break;
+    }
+    
+    nssum[rating] += 1;
+    nd_kr[topic][rating] += 1;
+    ns_r[sentimentid][rating] += 1;
+
+    return rating;
 }
 
 void Model::inference(){
+    int sp_aspect, sp_rating;
     double perp;
-    int topic_s, topic_a;
 
-    printf("Sampling %d iterations for inference on testdata.\n", lda_iters_t);
-    compute_beta_s_t();
-    compute_beta_a_t();
-    compute_alpha_t();
-    perp = compute_perp("test");
+    printf("Sampling %d iterations for inference on testdata.\n", niters_t);
+    compute_psai_t();
+    compute_phi_t();
+    compute_beta_t();
+    perp = prediction(TEST_DATA, EVAL_PERPLEXITY, false);
     printf("Before training, perplexity of test data is: %.4f\n", perp);
     
-    for (int i=0; i<lda_iters_t; i++){
-        printf("Current iteration %d ...\r ", i+1); fflush(stdout);
-        
-        for (int j=0; j<ptstdata->nR; j++){
-            for (int k=0; k<ptstdata->reviews[j]->length; k++){
-                topic_s = lda_sampling_s_t(j, k);
-                ptstdata->reviews[j]->z_ai[k] = topic_s;
-                topic_a = lda_sampling_a_t(j, k);
-                ptstdata->reviews[j]->z_au[k] = topic_a;
+    for (int ii=0; ii<niters_t; ii++){
+        printf("Current iteration %d ...\r", ii);
+        for (int i=0; i<ptstdata->nR; i++){
+            for (int j=0; j<ptstdata->reviews[i]->length; j++){
+                sp_aspect = inf_aspect_sampling(i, j);
+                ptstdata->reviews[i]->z_ai[j] = sp_aspect;
+                sp_rating = inf_rating_sampling(i, j);
+                ptstdata->reviews[i]->r_s[j] = sp_rating;
             }
         }
-        if (burntag and i > lda_saveiter_t and i % lda_savestep_t==0){
-            for (int j=0; j<K; j++){
-                cum_nwsum_s_t[j] += lda_nwsum_s_t[j];
-                cum_nwsum_a_t[j] += lda_nwsum_a_t[j];
-                for (int k=0; k<V_s; k++)
-                    cum_nw_s_t[k][j] += lda_nw_s_t[k][j];
-                for (int k=0; k<V_a; k++)
-                    cum_nw_a_t[k][j] += lda_nw_a_t[k][j];
-                for (int k=0; k<RW_t; k++)
-                    cum_nd_t[k][j] += lda_nd_t[k][j];
-            }
-            burncnt_t++;
-        }
-    
-        if (i%10==0){
-            compute_beta_s_t();
-            compute_beta_a_t();
-            compute_alpha_t();
-            perp = compute_perp("test");
+        if (ii % 10 == 0){
+            compute_psai_t();
+            compute_phi_t();
+            compute_beta_t();
+            perp = prediction(TEST_DATA, EVAL_PERPLEXITY, false);
             printf("Perplexity of test data is: %.4f\n", perp);
         }
     }
     printf("Gibbs sampling for inference completed.\n");
     
-    compute_beta_s_t();
-    compute_beta_a_t();
-    compute_alpha_t();
-    perp = compute_perp("test");
+    compute_psai_t();
+    compute_phi_t();
+    compute_beta_t();
+    perp = prediction(TEST_DATA, EVAL_PERPLEXITY, false);
     printf("Perplexity of test data is: %.4f\n", perp);
-}
-    
-int Model::lda_sampling_s_t(int reviewidx, int termidx){
-    int topic = ptstdata->reviews[reviewidx]->z_ai[termidx];
-    int sentimentid = ptstdata->reviews[reviewidx]->sentimentid[termidx];
-
-    lda_nwsum_s_t[topic] -= 1;
-    lda_nw_s_t[sentimentid][topic] -= 1;
-    lda_nd_t[reviewidx][topic] -= 1;
-
-    double Vbeta = V_s*lda_beta;
-    double Kalpha = K*lda_alpha;
-    vec prob = zeros<vec>(K);
-
-    for (int i=0; i<K; i++){
-        prob(i) = (lda_nd_t[reviewidx][i]+lda_alpha)*
-            (lda_nw_s[sentimentid][i]+lda_nw_s_t[sentimentid][i]+lda_beta)/
-            (lda_nwsum_s[i]+lda_nwsum_s_t[i]+Vbeta);
-    }
-    prob = cumsum(prob);
-
-    double sp_prob = ((double)random()/RAND_MAX)*prob(K-1);
-    for (topic=0; topic<K; topic++){
-        if (prob(topic)>sp_prob)
-            break;
-    }
-    
-    lda_nwsum_s_t[topic] += 1;
-    lda_nw_s_t[sentimentid][topic] += 1;
-    lda_nd_t[reviewidx][topic] += 1;
-
-    return topic;
-}
-
-int Model::lda_sampling_a_t(int reviewidx, int termidx){
-    int topic = ptstdata->reviews[reviewidx]->z_au[termidx];
-    int headtermid = ptstdata->reviews[reviewidx]->headtermid[termidx];
-
-    lda_nwsum_a_t[topic] -= 1;
-    lda_nw_a_t[headtermid][topic] -= 1;
-    lda_nd_t[reviewidx][topic] -= 1;
-
-    double Vbeta = V_s*lda_beta;
-    double Kalpha = K*lda_alpha;
-    vec prob = zeros<vec>(K);
-
-    for (int i=0; i<K; i++){
-        prob(i) = (lda_nd_t[reviewidx][i]+lda_alpha)*
-            (lda_nw_a[headtermid][i]+lda_nw_a_t[headtermid][i]+lda_beta)/
-            (lda_nwsum_a[i]+lda_nwsum_a_t[i]+Vbeta);
-    }
-    prob = cumsum(prob);
-
-    double sp_prob = ((double)random()/RAND_MAX)*prob(K-1);
-    for (topic=0; topic<K; topic++){
-        if (prob(topic)>sp_prob)
-            break;
-    }
-    
-    lda_nwsum_a_t[topic] += 1;
-    lda_nw_a_t[headtermid][topic] += 1;
-    lda_nd_t[reviewidx][topic] += 1;
-    
-    return topic;
-}
-
-void Model::compute_beta_s_t(){
-    for (int i=0; i<K; i++){
-        for (int j=0; j<V_s; j++){
-            if (burntag){
-                lda_beta_s_t(i,j) = (cum_nw_s[j][i]+cum_nw_s_t[j][i]+lda_beta)/
-                    (cum_nwsum_s[i]+cum_nwsum_s_t[i]+V_s*lda_beta);
-            }else{
-                lda_beta_s_t(i,j) = (lda_nw_s[j][i]+lda_nw_s_t[j][i]+lda_beta)/
-                    (lda_nwsum_s[i]+lda_nwsum_s_t[i]+V_s*lda_beta);
-            }
-        }
-    }
-}
-        
-void Model::compute_beta_a_t(){
-    for (int i=0; i<K; i++){
-        for (int j=0; j<V_a; j++){
-            if (burntag){
-                lda_beta_a_t(i,j) = (cum_nw_a[j][i]+cum_nw_a_t[j][i]+lda_beta)/
-                    (cum_nwsum_a[i]+cum_nwsum_a_t[i]+V_a*lda_beta);
-            }else{
-                lda_beta_a_t(i,j) = (lda_nw_a[j][i]+lda_nw_a_t[j][i]+lda_beta)/
-                    (lda_nwsum_a[i]+lda_nwsum_a_t[i]+V_a*lda_beta);
-            }
-        }
-    }
-}
-        
-void Model::compute_alpha_t(){
-    for (int i=0; i<RW_t; i++){
-        for (int j=0; j<K; j++){
-            if (burntag){
-                lda_alpha_r_t(i,j) = (cum_nd_t[i][j]+lda_alpha)/
-                    (burncnt_t*2*ptstdata->reviews[i]->length+K*lda_alpha);
-            }else{
-                lda_alpha_r_t(i,j)  = (lda_nd_t[i][j]+lda_alpha)/
-                    (2*ptstdata->reviews[i]->length+K*lda_alpha);
-            }
-        }
-    }
-}
-
-double Model::compute_perp(string dataseg){
-    double perp = 0.0;
-    int nword = 0;
-
-    if (dataseg=="train"){
-        for (int i=0; i<RW; i++){
-            nword += 2*ptrndata->reviews[i]->length;
-            perp += eval_review_perp(dataseg, i);
-        }
-        perp = exp(-perp/nword);
-    }else if (dataseg=="test"){
-        for (int i=0; i<RW_t; i++){
-            nword += 2*ptstdata->reviews[i]->length;
-            perp += eval_review_perp(dataseg, i);
-        }
-        perp = exp(-perp/nword);
-    }
-
-    return perp;
-}
-
-double Model::eval_review_perp(string dataseg, int reviewidx){
-    double perp = 0.0;
-    mat tmp_result = zeros<mat>(1,1);
-    
-    if (dataseg == "train"){
-        for (int i=0; i<ptrndata->reviews[reviewidx]->length; i++){
-            int sentimentid = ptrndata->reviews[reviewidx]->sentimentid[i];
-            int headtermid = ptrndata->reviews[reviewidx]->headtermid[i];
-            double prob1 = 0.0;
-            double prob2 = 0.0;
-            
-            for (int k=0; k<K; k++){
-                prob1 += lda_alpha_r(reviewidx,k)*lda_beta_a(k, headtermid);
-                prob2 += lda_alpha_r(reviewidx,k)*lda_beta_s(k, sentimentid);
-            }
-            perp += log(prob1*prob2);
-            /*for (int k=0; k<K; k++){
-                prob += lda_alpha_r(reviewidx,k)*lda_beta_a(k, headtermid)*
-                    lda_beta_s(k, sentimentid);
-            }
-            perp += log(prob);*/
-            /*tmp_result= (lda_alpha_r.row(reviewidx)*lda_beta_s.col(sentimentid)) *
-                (lda_alpha_r.row(reviewidx)*lda_beta_a.col(headtermid));
-            perp += log(tmp_result(0,0));*/
-
-            /*tmp_result = lda_alpha_r.row(reviewidx) * 
-                (lda_beta_s.col(sentimentid)%lda_beta_a.col(headtermid));
-            perp += log(tmp_result(0,0));*/
-             
-            if (std::isnan(perp)){
-                cout << lda_alpha_r.row(reviewidx)<< endl;
-                cout << lda_beta_s.col(sentimentid).t() << endl;
-                cout << lda_beta_a.col(headtermid).t() << endl;
-                utils::pause();
-            }
-        }
-    }else if (dataseg == "test"){
-        for (int i=0; i<ptstdata->reviews[reviewidx]->length; i++){
-            int sentimentid = ptstdata->reviews[reviewidx]->sentimentid[i];
-            int headtermid = ptstdata->reviews[reviewidx]->headtermid[i];
-            /*tmp_result= (lda_alpha_r_t.row(reviewidx)*lda_beta_s_t.col(sentimentid)) *
-                (lda_alpha_r_t.row(reviewidx)*lda_beta_a_t.col(headtermid));
-            perp += log(tmp_result(0,0));*/
-            /*double prob = 0.0;
-            for (int k=0; k<K; k++){
-                prob += lda_alpha_r_t(reviewidx,k)*lda_beta_a_t(k, headtermid)*
-                    lda_beta_s_t(k, sentimentid);
-            }
-            perp += log(prob);*/
-            double prob1 = 0.0;
-            double prob2 = 0.0;
-            
-            for (int k=0; k<K; k++){
-                prob1 += lda_alpha_r_t(reviewidx,k)*lda_beta_a_t(k, headtermid);
-                prob2 += lda_alpha_r_t(reviewidx,k)*lda_beta_s_t(k, sentimentid);
-            }
-            perp += log(prob1*prob2);
-        }
-    }
-
-    return perp;
 }
 
 void Model::compute_as_rating(const string dataseg){
@@ -1401,7 +1131,7 @@ void Model::compute_phi(){
 void Model::compute_beta(){
     for (int i=0; i<K; i++){
         for (int j=0; j<V_a; j++){
-            beta(i, j) = (na_z[i][j]+eta2)/(nasum_i[i]+V_a*eta2);
+            beta(i, j) = (na_z[j][i]+eta2)/(nasum_i[i]+V_a*eta2);
         }
     }
 }
@@ -1448,9 +1178,9 @@ void Model::compute_phi_t(){
 
 void Model::compute_beta_t(){
     for (int i=0; i<K; i++){
-        for (int j=0; j<RL; j++){
-            psai(i, j) = (nd_kr[i][j]+nd_kr_t[i][j]+eta0)
-                /(nasum_i[i]+nasum_i_t[i]+RL*eta0);
+        for (int j=0; j<V_a; j++){
+            beta(i, j) = (na_z[j][i]+na_z_t[j][i]+eta2)/
+                (nasum_i[i]+nasum_i_t[i]+V_a*eta2);
         }
     }
 }
@@ -1522,14 +1252,14 @@ double Model::eval_corp_perp(const string dataseg, const string review_form){
             printf("Need to be implemented.\n");
         }else if (review_form == REVIEW_SINGLE_FORM){
             for (int i=0; i<ptrndata->nR; i++){
-                wordnum += ptrndata->reviews[i]->length;
+                wordnum += 2*ptrndata->reviews[i]->length;
                 perp += eval_doc_perp(i, dataseg);
             }
             perp = exp(-perp/wordnum);
         }
     }else if (dataseg == TEST_DATA){
         for (int i=0; i<ptstdata->nR; i++){
-            wordnum += ptstdata->reviews[i]->length;
+            wordnum += 2*ptstdata->reviews[i]->length;
             perp += eval_doc_perp(i, dataseg);
         }
         perp = exp(-perp/wordnum);
@@ -1542,41 +1272,48 @@ double Model::eval_doc_perp(int idx, const string dataseg){
     if (dataseg == TRAIN_DATA){
         double doc_perp = 0.0;
         rowvec doc_aspect = zeros<rowvec>(K);
-        for (int i=0; i<K; i++){
-            for (int j=0; j<ptrndata->reviews[idx]->length; j++){
-                doc_aspect(ptrndata->reviews[idx]->z_ai[j]) += 1;
-            }
-            doc_aspect = (doc_aspect+alpha)/(sum(doc_aspect)+K*alpha);
+        for (int j=0; j<ptrndata->reviews[idx]->length; j++){
+            doc_aspect(ptrndata->reviews[idx]->z_ai[j]) += 1;
         }
+        doc_aspect = (doc_aspect+alpha)/(sum(doc_aspect)+K*alpha);
         for (int i=0; i<ptrndata->reviews[idx]->length; i++){
             int tid = ptrndata->reviews[idx]->headtermid[i];
             int sid = ptrndata->reviews[idx]->sentimentid[i];
-            inter_result = doc_aspect*(psai*phi.col(sid) + beta.col(tid));
-            if (std::isnan(log(inter_result(0.0)))){
+            //inter_result = doc_aspect * ((psai*phi.col(sid))%beta.col(tid));
+            float prob = 0.0;
+            for (int j=0; j<K; j++){
+                for (int k=0; k<RL; k++)
+                    prob += doc_aspect(j)*psai(j,k)*phi(k,sid)*beta(j,tid);
+            }
+            if (std::isnan(log(prob))){
                 cout << doc_aspect << endl;
                 cout << psai << endl;
                 cout << phi.col(sid) << endl;
                 cout << beta.col(tid) << endl;
                 utils::pause();
             }
-            doc_perp += log(inter_result(0,0));
+            //doc_perp += log(inter_result(0,0));
+            doc_perp += log(prob);
         }
         doc_aspect.clear();
         return doc_perp;
     }else if (dataseg == TEST_DATA){
         double doc_perp = 0.0;
         rowvec doc_aspect = zeros<rowvec>(K);
-        for (int i=0; i<K; i++){
-            for (int j=0; j<ptstdata->reviews[idx]->length; j++){
-                doc_aspect(ptstdata->reviews[idx]->z_ai[j]) += 1;
-            }
-            doc_aspect = (doc_aspect+alpha)/(sum(doc_aspect)+K*alpha);
+        for (int j=0; j<ptstdata->reviews[idx]->length; j++){
+            doc_aspect(ptstdata->reviews[idx]->z_ai[j]) += 1;
         }
+        doc_aspect = (doc_aspect+alpha)/(sum(doc_aspect)+K*alpha);
         for (int i=0; i<ptstdata->reviews[idx]->length; i++){
             int tid = ptstdata->reviews[idx]->headtermid[i];
             int sid = ptstdata->reviews[idx]->sentimentid[i];
-            inter_result = doc_aspect*(psai_t*phi_t.col(sid) + beta_t.col(tid));
-            doc_perp += log(inter_result(0,0));
+            //inter_result = doc_aspect * ((psai_t*phi_t.col(sid))%beta_t.col(tid));
+            float prob = 0.0;
+            for (int j=0; j<K; j++){
+                for (int k=0; k<RL; k++)
+                    prob += doc_aspect(j)*psai_t(j,k)*phi_t(k,sid)*beta_t(j,tid);
+            }
+            doc_perp += log(prob);
         }
         doc_aspect.clear();
         return doc_perp;
